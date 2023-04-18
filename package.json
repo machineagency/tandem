@@ -1,13 +1,14 @@
 {
-  "name": "proxy-test",
+  "name": "Duet3D Proxy Server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "node build/server.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Jasper Tran O'Leary",
+  "license": "CC-BY-SA",
   "dependencies": {
     "@types/express": "^4.17.17",
     "@types/node-fetch": "^2.6.3",
