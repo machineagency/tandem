@@ -32,7 +32,14 @@ const forward = (originalReq: Request) => {
         let method = originalReq.method;
         let body = originalReq.body;
         // Skipping forwarding headers for now
-        fetch(url, { method, body })
+        let params;
+        if (method === 'POST') {
+            params = { method, body };
+        }
+        else {
+            params = { method };
+        }
+        fetch(url, params)
             .then((proxyResponse) => {
                 resolve(proxyResponse);
             })
