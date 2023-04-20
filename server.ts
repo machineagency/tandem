@@ -7,6 +7,7 @@ import * as cors from 'cors';
 const duetHostname = "192.168.1.2";
 
 const app = express();
+app.use(express.text());
 app.use(cors());
 const port = 3000;
 
@@ -29,7 +30,9 @@ const forward = (originalReq: Request) => {
         let path = originalReq.url;
         let url = 'http://' + duetHostname + path;
         let method = originalReq.method;
-        fetch(url, { method })
+        let body = originalReq.body;
+        // Skipping forwarding headers for now
+        fetch(url, { method, body })
             .then((proxyResponse) => {
                 resolve(proxyResponse);
             })
@@ -40,11 +43,20 @@ const forward = (originalReq: Request) => {
     });
 };
 
-app.get('*', (req, res) => {
+app.all('*', (req, res) => {
     forward(req).then((proxyResponse) => {
-        proxyResponse.json()
+        // proxyResponse.json()
+        proxyResponse.text()
             .then((proxyResponseData) => {
-                res.json(proxyResponseData);
+                try {
+                    let parsedBody = JSON.parse(proxyResponseData);
+                    res.status(proxyResponse.status)
+                       .json(parsedBody);
+                }
+                catch (Error) {
+                    res.status(proxyResponse.status)
+                       .send(proxyResponseData);
+                }
             })
             .catch((err) => {
                 console.error("Got a response from the Duet, but could not parse it as a JSON.");
