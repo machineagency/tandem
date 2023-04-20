@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "node build/server.js"
+    "server": "npx nodemon server.ts"
   },
   "author": "Jasper Tran O'Leary",
   "license": "CC-BY-SA",
