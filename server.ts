@@ -3,6 +3,9 @@ import { Request as NFRequest, Response as NFResponse } from 'node-fetch';
 import * as express from 'express';
 import { Request, Response } from 'express';
 import * as cors from 'cors';
+import * as fs from 'fs';
+import * as path from 'path';
+import { exec } from 'child_process'
 
 const duetHostname = "192.168.1.2";
 
@@ -50,7 +53,7 @@ const forward = (originalReq: Request) => {
     });
 };
 
-app.all('*', (req, res) => {
+app.all('/duet', (req, res) => {
     forward(req).then((proxyResponse) => {
         // proxyResponse.json()
         proxyResponse.text()
@@ -75,8 +78,35 @@ app.all('*', (req, res) => {
         console.error(err);
         res.sendStatus(500);
     });
-})
+});
+
+app.post('/gerber/compile', (req, res) => {
+    console.log(req.body);
+    if (req.body) {
+        let filepath = __dirname + '/tmp/gerber.gbr';
+        fs.writeFileSync(filepath, req.body);
+
+        // let millconfigFilepath = __dirname + '/config/millproject';
+        // let buffer = fs.readFileSync(millconfigFilepath);
+        // let millconfig = buffer.toString();
+        // console.log(millconfig);
+        
+        let configPath = __dirname + '/config/millproject';
+        let gerberPath = __dirname + '/tmp/gerber.gbr';
+        exec(`pcb2gcode --front ${gerberPath} --config ${configPath}`, {
+            cwd: __dirname + '/tmp'
+        }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+            });
+        }
+    res.sendStatus(200);
+});
 
 app.listen(port, () => {
-  console.log(`Duet Proxy Server listening on port ${port}`);
+  console.log(`Exprimer Server listening on port ${port}`);
 })
