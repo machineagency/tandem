@@ -81,30 +81,33 @@ app.all('/duet', (req, res) => {
 });
 
 app.post('/gerber/compile', (req, res) => {
-    console.log(req.body);
-    if (req.body) {
-        let filepath = __dirname + '/tmp/gerber.gbr';
-        fs.writeFileSync(filepath, req.body);
+    if (!req.body) {
+        res.sendStatus(500);
+        return;
+    }
+    let filepath = __dirname + '/tmp/front.gbr';
+    fs.writeFileSync(filepath, req.body);
 
-        // let millconfigFilepath = __dirname + '/config/millproject';
-        // let buffer = fs.readFileSync(millconfigFilepath);
-        // let millconfig = buffer.toString();
-        // console.log(millconfig);
-        
-        let configPath = __dirname + '/config/millproject';
-        let gerberPath = __dirname + '/tmp/gerber.gbr';
-        exec(`pcb2gcode --front ${gerberPath} --config ${configPath}`, {
-            cwd: __dirname + '/tmp'
-        }, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                return;
-            }
+    // let millconfigFilepath = __dirname + '/config/millproject';
+    // let buffer = fs.readFileSync(millconfigFilepath);
+    // let millconfig = buffer.toString();
+    // console.log(millconfig);
+
+    let configPath = __dirname + '/config/millproject';
+    let front = __dirname + '/tmp/front.gbr';
+    exec(`pcb2gcode --front ${front} --config ${configPath}`, {
+        cwd: __dirname + '/tmp'
+    }, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
             console.log(`stdout: ${stdout}`);
             console.error(`stderr: ${stderr}`);
-            });
+            res.sendStatus(500);
         }
-    res.sendStatus(200);
+        let gcodeFilepath = __dirname + '/tmp/front.ngc';
+        let gcode = fs.readFileSync(gcodeFilepath).toString();
+        res.send(gcode).status(200);
+    });
 });
 
 app.listen(port, () => {
