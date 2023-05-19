@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process'
 
+import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace/core'
+
 const duetHostname = "192.168.1.2";
 
 const app = express();
@@ -80,21 +82,38 @@ app.all('/duet', (req, res) => {
     });
 });
 
-app.post('/gerber/compile', (req, res) => {
+app.post('/gerber', (req, res) => {
     if (!req.body) {
         res.sendStatus(500);
         return;
     }
-    let filepath = __dirname + '/tmp/front.gbr';
+    let filepath = __dirname + '/tmp/F_Cu.gbr';
     fs.writeFileSync(filepath, req.body);
+    res.sendStatus(200);
+});
 
-    // let millconfigFilepath = __dirname + '/config/millproject';
-    // let buffer = fs.readFileSync(millconfigFilepath);
-    // let millconfig = buffer.toString();
-    // console.log(millconfig);
 
+app.get('/gerber/plot', (req, res) => {
+    let files = [
+        __dirname + '/tmp/F_Cu.gbr',
+        __dirname + '/tmp/outline.gbr'
+    ];
+    read(files).then((readResult) => {
+        const plotResult = plot(readResult);
+        const renderLayersResult = renderLayers(plotResult);
+        const renderBoardResult = renderBoard(renderLayersResult);
+        console.log(Object.values(renderLayersResult.rendersById).map(idk => idk.children));
+        const svg = stringifySvg(renderBoardResult.top);
+        res.send(svg).status(200);
+    }).catch((error) => {
+        console.log(error);
+        res.sendStatus(500);
+    });
+});
+
+app.get('/gerber/gcode', (req, res) => {
     let configPath = __dirname + '/config/millproject';
-    let front = __dirname + '/tmp/front.gbr';
+    let front = __dirname + '/tmp/F_Cu.gbr';
     exec(`pcb2gcode --front ${front} --config ${configPath}`, {
         cwd: __dirname + '/tmp'
     }, (error, stdout, stderr) => {
@@ -106,7 +125,7 @@ app.post('/gerber/compile', (req, res) => {
         }
         let gcodeFilepath = __dirname + '/tmp/front.ngc';
         let gcode = fs.readFileSync(gcodeFilepath).toString();
-        res.send(gcode).status(200);
+        res.status(200).send(gcode);
     });
 });
 
