@@ -9,6 +9,8 @@ import { exec } from 'child_process'
 
 import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace/core'
 
+type Filepath = string;
+
 const duetHostname = "192.168.1.2";
 
 const app = express();
@@ -129,6 +131,15 @@ app.get('/gerber/gcode', (req, res) => {
     });
 });
 
+function watchKicadPcbFile(filepath: Filepath) {
+    fs.watchFile(filepath, (curr, prev) => {
+        // TODO: compile to gerber, visualize gerber, gerber -> G-Code
+    });
+}
+
 app.listen(port, () => {
   console.log(`Exprimer Server listening on port ${port}`);
+  const myFilepath = '/Users/jaspero/Downloads/Tiny44.kicad_pcb';
+  watchKicadPcbFile(myFilepath);
+  console.log(`Watching KiCAD PCB file: ${myFilepath}`);
 })
