@@ -202,7 +202,7 @@ function watchKicadPcbFile(filepath: Filepath) {
 
 function compilePCB() {
     return new Promise<void>((resolve, reject) => {
-        console.log(`Compiling PCB at ${new Date().toLocaleTimeString()}.`)
+        console.log(`Compiling PCB at ${new Date().toLocaleTimeString()}...`)
         generateGerbers().then(() => {
             Promise.all([
                 generateGerberPlots(),
@@ -219,6 +219,7 @@ function compilePCB() {
         }).finally(() => {
             LATEST_REGENERATE_TIME = Date.now();
             NEEDS_REGENERATE = false;
+            console.log('... done.')
         });
     });
 }
@@ -283,4 +284,5 @@ function generateGCodes() {
 app.listen(port, () => {
     console.log(`Exprimer Server listening on port ${port}`);
     watchKicadPcbFile(pcbPath());
+    compilePCB();
 });
