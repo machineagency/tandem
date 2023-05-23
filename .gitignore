@@ -5,6 +5,7 @@ build/
 
 config/*
 !config/placeholder.txt
+!config/millproject
 
 tmp/*
 !tmp/placeholder.txt
