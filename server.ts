@@ -96,7 +96,7 @@ app.get('/gerbers/plot', (req, res) => {
     });
 });
 
-app.get('/gerbers/gcode', (req, res) => {
+app.get('/gerbers/gcodes', (req, res) => {
     // TODO: don't call generate here, just wait on stale flag
     generateGCodes().then((frontGCode) => {
         res.status(200).send(frontGCode);
@@ -118,6 +118,15 @@ app.post('/pcb/watchfile', (req, res) => {
     res.sendStatus(200);
 });
 
+app.post('/pcb/compile', (req, res) => {
+    compilePCB().then((idk) => {
+        console.log(idk);
+        res.sendStatus(200);
+    }).catch((error) => {
+        res.status(500).send(error);
+    });
+});
+
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         // TODO: compile to gerber, visualize gerber, gerber -> G-Code
@@ -125,8 +134,8 @@ function watchKicadPcbFile(filepath: Filepath) {
     console.log(`Watching KiCAD PCB file: ${gerberFilepath}`);
 }
 
-function compilePcbFile() {
-    return generateGerbers().then(_ => {
+function compilePCB() {
+    return generateGerbers().then(gerberFile => {
         return Promise.all([
             generateGerberPlots(),
             generateGCodes()
@@ -177,10 +186,15 @@ function generateGerberPlots() {
 
 function generateGCodes() {
     return new Promise<string>((resolve, reject) => {
-        // TODO: run for every relevant generated gerber file
         let configPath = __dirname + '/config/millproject';
         let front = __dirname + `/tmp/${gerberName}-CuTop.gtl`;
-        exec(`pcb2gcode --front ${front} --config ${configPath}`, {
+        let outline = __dirname + `/tmp/${gerberName}-EdgeCuts.gm1`;
+        let drill = __dirname + `/tmp/${gerberName}.drl`;
+        exec(`pcb2gcode --config ${configPath} \
+              --front ${front} --drill ${drill} --outline ${outline}\
+              --front-output ${gerberName}-CuTop.ngc \
+              --outline-output ${gerberName}-EdgeCuts.ngc \
+              --drill-output ${gerberName}-drill.ngc`, {
             cwd: __dirname + '/tmp'
         }, (error, stdout, stderr) => {
             if (error) {
