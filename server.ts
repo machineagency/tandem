@@ -12,8 +12,10 @@ import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace
 type Filepath = string;
 
 const duetHostname = "192.168.1.2";
-const testGerberName = 'Tiny44';
-const testGerberFilepath = `/Users/jaspero/Downloads/${testGerberName}.kicad_pcb`;
+const gerberName = 'Tiny44';
+const gerberFilepath = `${__dirname}/defaults/${gerberName}.kicad_pcb`;
+
+let filesLastUpdated = Date.now();
 
 const app = express();
 app.use(express.text());
@@ -87,57 +89,27 @@ app.all('/duet', (req, res) => {
 });
 
 app.get('/gerbers/plot', (req, res) => {
-    let files = [
-        __dirname + `/tmp/${testGerberName}-CuTop.gtl`,
-        __dirname + `/tmp/${testGerberName}.drl`,
-        __dirname + `/tmp/${testGerberName}-EdgeCuts.gm1`,
-    ];
-    read(files).then((readResult) => {
-        const plotResult = plot(readResult);
-        const renderLayersResult = renderLayers(plotResult);
-        const renderBoardResult = renderBoard(renderLayersResult);
-        console.log(Object.values(renderLayersResult.rendersById).map(idk => idk.children));
-        const svg = stringifySvg(renderBoardResult.top);
-        res.send(svg).status(200);
-    }).catch((error) => {
-        console.log(error);
-        res.sendStatus(500);
+    generateGerberPlots().then((frontSvg) => {
+        res.status(200).send(frontSvg);
+    }).catch((err) => {
+        res.status(500).send(err);
     });
 });
 
 app.get('/gerbers/gcode', (req, res) => {
-    // TODO: run for every relevant generated gerber file
-    let configPath = __dirname + '/config/millproject';
-    let front = __dirname + `/tmp/${testGerberName}-CuTop.gtl`;
-    exec(`pcb2gcode --front ${front} --config ${configPath}`, {
-        cwd: __dirname + '/tmp'
-    }, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`exec error: ${error}`);
-            console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
-            res.status(500).send(stderr);
-            return;
-        }
-        let gcodeFilepath = __dirname + `/tmp/${testGerberName}-CuTop.ngc`;
-        let gcode = fs.readFileSync(gcodeFilepath).toString();
-        res.status(200).send(gcode);
+    // TODO: don't call generate here, just wait on stale flag
+    generateGCodes().then((frontGCode) => {
+        res.status(200).send(frontGCode);
+    }).catch((err) => {
+        res.status(500).send(err);
     });
 });
 
 app.get('/pcb/gerbers', (req, res) => {
-    exec(`kikit export gerber ${testGerberFilepath} .`, {
-        cwd: __dirname + '/tmp'
-    }, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`exec error: ${error}`);
-            console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
-            res.status(500).send(stderr);
-        }
-        let frontGerber = __dirname + `/tmp/${testGerberName}-CuTop.gtl`;
-        let front = fs.readFileSync(frontGerber).toString();
-        res.status(200).send(front);
+    generateGerbers().then((frontGerber) => {
+        res.status(200).send(frontGerber);
+    }).catch((err) => {
+        res.status(500).send(err);
     });
 });
 
@@ -150,10 +122,81 @@ function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         // TODO: compile to gerber, visualize gerber, gerber -> G-Code
     });
+    console.log(`Watching KiCAD PCB file: ${gerberFilepath}`);
+}
+
+function compilePcbFile() {
+    return generateGerbers().then(_ => {
+        return Promise.all([
+            generateGerberPlots(),
+            generateGCodes()
+        ]);
+    }).catch((error) => {
+        return error;
+    });
+}
+
+function generateGerbers() {
+    return new Promise<string>((resolve, reject) => {
+        exec(`kikit export gerber ${gerberFilepath} .`, {
+            cwd: __dirname + '/tmp'
+        }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                console.log(`stdout: ${stdout}`);
+                console.error(`stderr: ${stderr}`);
+                reject(stderr);
+            }
+            let frontGerber = __dirname + `/tmp/${gerberName}-CuTop.gtl`;
+            let front = fs.readFileSync(frontGerber).toString();
+            resolve(front);
+        });
+    });
+}
+
+function generateGerberPlots() {
+    return new Promise<string>((resolve, reject) => {
+        let files = [
+            __dirname + `/tmp/${gerberName}-CuTop.gtl`,
+            __dirname + `/tmp/${gerberName}.drl`,
+            __dirname + `/tmp/${gerberName}-EdgeCuts.gm1`,
+        ];
+        read(files).then((readResult) => {
+            const plotResult = plot(readResult);
+            const renderLayersResult = renderLayers(plotResult);
+            const renderBoardResult = renderBoard(renderLayersResult);
+            console.log(Object.values(renderLayersResult.rendersById).map(idk => idk.children));
+            const topSvg = stringifySvg(renderBoardResult.top);
+            resolve(topSvg);
+        }).catch((error) => {
+            console.log(error);
+            reject(error);
+        });
+    });
+}
+
+function generateGCodes() {
+    return new Promise<string>((resolve, reject) => {
+        // TODO: run for every relevant generated gerber file
+        let configPath = __dirname + '/config/millproject';
+        let front = __dirname + `/tmp/${gerberName}-CuTop.gtl`;
+        exec(`pcb2gcode --front ${front} --config ${configPath}`, {
+            cwd: __dirname + '/tmp'
+        }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                console.log(`stdout: ${stdout}`);
+                console.error(`stderr: ${stderr}`);
+                reject(stderr);
+            }
+            let gcodeFilepath = __dirname + `/tmp/${gerberName}-CuTop.ngc`;
+            let gcode = fs.readFileSync(gcodeFilepath).toString();
+            resolve(gcode);
+        });
+    });
 }
 
 app.listen(port, () => {
-  console.log(`Exprimer Server listening on port ${port}`);
-  watchKicadPcbFile(testGerberFilepath);
-  console.log(`Watching KiCAD PCB file: ${testGerberFilepath}`);
-})
+    console.log(`Exprimer Server listening on port ${port}`);
+    watchKicadPcbFile(gerberFilepath);
+});
