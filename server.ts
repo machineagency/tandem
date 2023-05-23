@@ -140,29 +140,44 @@ app.all('/duet', (req, res) => {
     });
 });
 
-app.get('/gerbers/plot', (req, res) => {
-    generateGerberPlots().then((frontSvg) => {
-        res.status(200).send(frontSvg);
-    }).catch((err) => {
-        res.status(500).send(err);
-    });
-});
-
-app.get('/gerbers/gcodes', (req, res) => {
-    // TODO: don't call generate here, just wait on stale flag
-    generateGCodes().then((frontGCode) => {
-        res.status(200).send(frontGCode);
-    }).catch((err) => {
-        res.status(500).send(err);
-    });
-});
-
-app.get('/pcb/gerbers', (req, res) => {
-    generateGerbers().then((frontGerber) => {
-        res.status(200).send(frontGerber);
-    }).catch((err) => {
-        res.status(500).send(err);
-    });
+app.get('/file/:filetype/:layerOrSide', (req, res) => {
+    let filetype = req.params.filetype;
+    let layerOrSide = req.params.layerOrSide;
+    if (isFiletype(filetype)) {
+        if (filetype === 'plot') {
+            if (isSide(layerOrSide)) {
+                let side = layerOrSide;
+                let path = plotPath(side);
+                let fileString = fs.readFileSync(path).toString();
+                res.status(200).send(fileString);
+            }
+            else {
+                // error: invalid side
+                res.status(400).send({
+                    error: `Side (${layerOrSide}) must be: front, back.`
+                });
+            }
+        }
+        else if (isLayer(layerOrSide)) {
+            let layer = layerOrSide;
+            let pathFn = filetype === 'gerber' ? gerberPath : gcodePath;
+            let path = pathFn(layer);
+            let fileString = fs.readFileSync(path).toString();
+            res.status(200).send(fileString);
+        }
+        else {
+            // error: valid filetype, but not plot and invalid layer
+            res.status(400).send({
+                error: `Layer (${layerOrSide}) must be: top, outline, drill.`
+            });
+        }
+    }
+    else {
+        // error: invalid filetype
+        res.status(400).send({
+            error: `Filetype (${layerOrSide}) must be: gerber, plot, gcode.`
+        });
+    }
 });
 
 app.post('/pcb/watchfile', (req, res) => {
