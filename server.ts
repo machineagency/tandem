@@ -12,8 +12,9 @@ import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace
 type Filepath = string;
 
 const duetHostname = "192.168.1.2";
-const gerberName = 'Tiny44';
-const gerberFilepath = `${__dirname}/defaults/${gerberName}.kicad_pcb`;
+const pcbName = 'Tiny44';
+const pcbFilepath = `${__dirname}/defaults/${pcbName}.kicad_pcb`;
+
 
 let filesLastUpdated = Date.now();
 
@@ -131,7 +132,7 @@ function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         // TODO: compile to gerber, visualize gerber, gerber -> G-Code
     });
-    console.log(`Watching KiCAD PCB file: ${gerberFilepath}`);
+    console.log(`Watching KiCAD PCB file: ${pcbFilepath}`);
 }
 
 function compilePCB() {
@@ -147,7 +148,7 @@ function compilePCB() {
 
 function generateGerbers() {
     return new Promise<string>((resolve, reject) => {
-        exec(`kikit export gerber ${gerberFilepath} .`, {
+        exec(`kikit export gerber ${pcbFilepath} .`, {
             cwd: __dirname + '/tmp'
         }, (error, stdout, stderr) => {
             if (error) {
@@ -156,7 +157,7 @@ function generateGerbers() {
                 console.error(`stderr: ${stderr}`);
                 reject(stderr);
             }
-            let frontGerber = __dirname + `/tmp/${gerberName}-CuTop.gtl`;
+            let frontGerber = __dirname + `/tmp/${pcbName}-CuTop.gtl`;
             let front = fs.readFileSync(frontGerber).toString();
             resolve(front);
         });
@@ -166,9 +167,9 @@ function generateGerbers() {
 function generateGerberPlots() {
     return new Promise<string>((resolve, reject) => {
         let files = [
-            __dirname + `/tmp/${gerberName}-CuTop.gtl`,
-            __dirname + `/tmp/${gerberName}.drl`,
-            __dirname + `/tmp/${gerberName}-EdgeCuts.gm1`,
+            __dirname + `/tmp/${pcbName}-CuTop.gtl`,
+            __dirname + `/tmp/${pcbName}.drl`,
+            __dirname + `/tmp/${pcbName}-EdgeCuts.gm1`,
         ];
         read(files).then((readResult) => {
             const plotResult = plot(readResult);
@@ -187,14 +188,14 @@ function generateGerberPlots() {
 function generateGCodes() {
     return new Promise<string>((resolve, reject) => {
         let configPath = __dirname + '/config/millproject';
-        let front = __dirname + `/tmp/${gerberName}-CuTop.gtl`;
-        let outline = __dirname + `/tmp/${gerberName}-EdgeCuts.gm1`;
-        let drill = __dirname + `/tmp/${gerberName}.drl`;
+        let front = __dirname + `/tmp/${pcbName}-CuTop.gtl`;
+        let outline = __dirname + `/tmp/${pcbName}-EdgeCuts.gm1`;
+        let drill = __dirname + `/tmp/${pcbName}.drl`;
         exec(`pcb2gcode --config ${configPath} \
               --front ${front} --drill ${drill} --outline ${outline}\
-              --front-output ${gerberName}-CuTop.ngc \
-              --outline-output ${gerberName}-EdgeCuts.ngc \
-              --drill-output ${gerberName}-drill.ngc`, {
+              --front-output ${pcbName}-CuTop.ngc \
+              --outline-output ${pcbName}-EdgeCuts.ngc \
+              --drill-output ${pcbName}-drill.ngc`, {
             cwd: __dirname + '/tmp'
         }, (error, stdout, stderr) => {
             if (error) {
@@ -203,7 +204,7 @@ function generateGCodes() {
                 console.error(`stderr: ${stderr}`);
                 reject(stderr);
             }
-            let gcodeFilepath = __dirname + `/tmp/${gerberName}-CuTop.ngc`;
+            let gcodeFilepath = __dirname + `/tmp/${pcbName}-CuTop.ngc`;
             let gcode = fs.readFileSync(gcodeFilepath).toString();
             resolve(gcode);
         });
@@ -212,5 +213,5 @@ function generateGCodes() {
 
 app.listen(port, () => {
     console.log(`Exprimer Server listening on port ${port}`);
-    watchKicadPcbFile(gerberFilepath);
+    watchKicadPcbFile(pcbFilepath);
 });
