@@ -86,18 +86,7 @@ app.all('/duet', (req, res) => {
     });
 });
 
-app.post('/gerber', (req, res) => {
-    if (!req.body) {
-        res.sendStatus(500);
-        return;
-    }
-    let filepath = __dirname + '/tmp/F_Cu.gbr';
-    fs.writeFileSync(filepath, req.body);
-    res.sendStatus(200);
-});
-
-
-app.get('/gerber/plot', (req, res) => {
+app.get('/gerbers/plot', (req, res) => {
     let files = [
         __dirname + `/tmp/${testGerberName}-CuTop.gtl`,
         __dirname + `/tmp/${testGerberName}.drl`,
@@ -116,7 +105,8 @@ app.get('/gerber/plot', (req, res) => {
     });
 });
 
-app.get('/gerber/gcode', (req, res) => {
+app.get('/gerbers/gcode', (req, res) => {
+    // TODO: run for every relevant generated gerber file
     let configPath = __dirname + '/config/millproject';
     let front = __dirname + `/tmp/${testGerberName}-CuTop.gtl`;
     exec(`pcb2gcode --front ${front} --config ${configPath}`, {
@@ -149,6 +139,11 @@ app.get('/pcb/gerbers', (req, res) => {
         let front = fs.readFileSync(frontGerber).toString();
         res.status(200).send(front);
     });
+});
+
+app.post('/pcb/watchfile', (req, res) => {
+    // TODO: change the currently watched KiCAD file
+    res.sendStatus(200);
 });
 
 function watchKicadPcbFile(filepath: Filepath) {
