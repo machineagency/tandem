@@ -185,23 +185,7 @@ app.post('/pcb/watchfile', (req, res) => {
     res.sendStatus(200);
 });
 
-app.post('/pcb/compile', (req, res) => {
-    compilePCB().then((idk) => {
-        console.log(idk);
-        res.sendStatus(200);
-    }).catch((error) => {
-        res.status(500).send(error);
-    });
-});
-
 app.get('/pcb/poll', (req, res) => {
-    // let clientLatestUpdate = req.query.latestUpdate;
-    // if (!clientLatestUpdate) {
-    //     res.status(400).send({
-    //         error: 'Please provide the latest time you asked for fresh files.'
-    //     });
-    //     return;
-    // }
     res.status(200).send({
         status: NEEDS_REGENERATE ? 'regeneratingFiles' : 'stable',
         lastUpdate: LATEST_REGENERATE_TIME
