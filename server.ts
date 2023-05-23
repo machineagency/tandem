@@ -99,8 +99,9 @@ app.post('/gerber', (req, res) => {
 
 app.get('/gerber/plot', (req, res) => {
     let files = [
-        __dirname + '/tmp/F_Cu.gbr',
-        __dirname + '/tmp/outline.gbr'
+        __dirname + `/tmp/${testGerberName}-CuTop.gtl`,
+        __dirname + `/tmp/${testGerberName}.drl`,
+        __dirname + `/tmp/${testGerberName}-EdgeCuts.gm1`,
     ];
     read(files).then((readResult) => {
         const plotResult = plot(readResult);
@@ -117,7 +118,7 @@ app.get('/gerber/plot', (req, res) => {
 
 app.get('/gerber/gcode', (req, res) => {
     let configPath = __dirname + '/config/millproject';
-    let front = __dirname + '/tmp/F_Cu.gbr';
+    let front = __dirname + `/tmp/${testGerberName}-CuTop.gtl`;
     exec(`pcb2gcode --front ${front} --config ${configPath}`, {
         cwd: __dirname + '/tmp'
     }, (error, stdout, stderr) => {
@@ -125,9 +126,10 @@ app.get('/gerber/gcode', (req, res) => {
             console.error(`exec error: ${error}`);
             console.log(`stdout: ${stdout}`);
             console.error(`stderr: ${stderr}`);
-            res.sendStatus(500);
+            res.status(500).send(stderr);
+            return;
         }
-        let gcodeFilepath = __dirname + '/tmp/front.ngc';
+        let gcodeFilepath = __dirname + `/tmp/${testGerberName}-CuTop.ngc`;
         let gcode = fs.readFileSync(gcodeFilepath).toString();
         res.status(200).send(gcode);
     });
