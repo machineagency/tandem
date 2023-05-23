@@ -12,6 +12,8 @@ import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace
 type Filepath = string;
 
 const duetHostname = "192.168.1.2";
+const testGerberName = 'Tiny44';
+const testGerberFilepath = `/Users/jaspero/Downloads/${testGerberName}.kicad_pcb`;
 
 const app = express();
 app.use(express.text());
@@ -139,7 +141,6 @@ function watchKicadPcbFile(filepath: Filepath) {
 
 app.listen(port, () => {
   console.log(`Exprimer Server listening on port ${port}`);
-  const myFilepath = '/Users/jaspero/Downloads/Tiny44.kicad_pcb';
-  watchKicadPcbFile(myFilepath);
-  console.log(`Watching KiCAD PCB file: ${myFilepath}`);
+  watchKicadPcbFile(testGerberFilepath);
+  console.log(`Watching KiCAD PCB file: ${testGerberFilepath}`);
 })
