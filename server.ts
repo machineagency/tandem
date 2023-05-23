@@ -11,6 +11,24 @@ import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace
 
 type Filepath = string;
 type Layer = 'top' | 'drill' | 'outline';
+type Filetype = 'gerber' | 'plot' | 'gcode';
+type Side = 'front' | 'back';
+
+function isFiletype(maybeFiletype: any): maybeFiletype is Filetype {
+    return maybeFiletype === 'gerber' ||
+           maybeFiletype === 'plot' ||
+           maybeFiletype === 'gcode'
+}
+
+function isLayer(maybeLayer: any): maybeLayer is Layer {
+    return maybeLayer === 'top' ||
+           maybeLayer === 'drill' ||
+           maybeLayer === 'outline'
+}
+
+function isSide(maybeSide: any): maybeSide is Side {
+    return maybeSide === 'front' || maybeSide === 'back';
+}
 
 const app = express();
 app.use(express.text());
