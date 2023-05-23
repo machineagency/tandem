@@ -20,7 +20,8 @@ const port = 3000;
 const duetHostname = "192.168.1.2";
 
 let pcbName = 'Tiny44';
-let filesLastUpdated = Date.now();
+let LATEST_REGENERATE_TIME = Date.now();
+let NEEDS_REGENERATE = false;
 
 function pcbPath(): Filepath {
     return `${__dirname}/defaults/${pcbName}.kicad_pcb`;
@@ -151,26 +152,53 @@ app.post('/pcb/compile', (req, res) => {
     });
 });
 
+app.get('/pcb/poll', (req, res) => {
+    // let clientLatestUpdate = req.query.latestUpdate;
+    // if (!clientLatestUpdate) {
+    //     res.status(400).send({
+    //         error: 'Please provide the latest time you asked for fresh files.'
+    //     });
+    //     return;
+    // }
+    res.status(200).send({
+        status: NEEDS_REGENERATE ? 'regeneratingFiles' : 'stable',
+        lastUpdate: LATEST_REGENERATE_TIME
+    });
+});
+
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
-        // TODO: compile to gerber, visualize gerber, gerber -> G-Code
+        NEEDS_REGENERATE = true;
+        compilePCB();
     });
     console.log(`Watching KiCAD PCB file: ${pcbPath()}`);
 }
 
 function compilePCB() {
-    return generateGerbers().then(gerberFile => {
-        return Promise.all([
-            generateGerberPlots(),
-            generateGCodes()
-        ]);
-    }).catch((error) => {
-        return error;
+    return new Promise<void>((resolve, reject) => {
+        console.log(`Compiling PCB at ${new Date().toLocaleTimeString()}.`)
+        generateGerbers().then(() => {
+            Promise.all([
+                generateGerberPlots(),
+                generateGCodes()
+            ]).then(() => {
+                resolve();
+            }).catch((error) => {
+                console.log(error);
+                reject(error);
+            });
+        }).catch((error) => {
+            console.log(error);
+            reject(error);
+        }).finally(() => {
+            LATEST_REGENERATE_TIME = Date.now();
+            NEEDS_REGENERATE = false;
+        });
     });
 }
 
 function generateGerbers() {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         exec(`kikit export gerber ${pcbPath()} .`, {
             cwd: __dirname + '/tmp'
         }, (error, stdout, stderr) => {
@@ -180,14 +208,13 @@ function generateGerbers() {
                 console.error(`stderr: ${stderr}`);
                 reject(stderr);
             }
-            let front = fs.readFileSync(gerberPath('top')).toString();
-            resolve(front);
+            resolve();
         });
     });
 }
 
 function generateGerberPlots() {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         let files = [
             gerberPath('top'), gerberPath('drill'), gerberPath('outline')
         ];
@@ -195,9 +222,8 @@ function generateGerberPlots() {
             const plotResult = plot(readResult);
             const renderLayersResult = renderLayers(plotResult);
             const renderBoardResult = renderBoard(renderLayersResult);
-            console.log(Object.values(renderLayersResult.rendersById).map(idk => idk.children));
             const topSvg = stringifySvg(renderBoardResult.top);
-            resolve(topSvg);
+            resolve();
         }).catch((error) => {
             console.log(error);
             reject(error);
@@ -206,7 +232,7 @@ function generateGerberPlots() {
 }
 
 function generateGCodes() {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         let configPath = __dirname + '/config/millproject';
         exec(`pcb2gcode --config ${configPath} \
               --front ${gerberPath('top')} \
@@ -223,8 +249,6 @@ function generateGCodes() {
                 console.error(`stderr: ${stderr}`);
                 reject(stderr);
             }
-            let gcode = fs.readFileSync(gcodePath('top')).toString();
-            resolve(gcode);
         });
     });
 }
