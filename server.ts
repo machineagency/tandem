@@ -55,6 +55,15 @@ function gerberPath(layer: Layer): Filepath {
     return `${__dirname}/tmp/${pcbName}${suffix}`;
 }
 
+function plotPath(side: Side): Filepath {
+    const plotSuffixes: Record<Side, string> = {
+        front: '-PlotFront.svg',
+        back: '-PlotBack.svg'
+    };
+    const suffix = plotSuffixes[side];
+    return `${__dirname}/tmp/${pcbName}${suffix}`;
+}
+
 function gcodePath(layer: Layer): Filepath {
     const gcodeSuffixes: Record<Layer, string> = {
         top: '-CuTop.ngc',
