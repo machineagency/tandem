@@ -133,6 +133,22 @@ app.get('/gerber/gcode', (req, res) => {
     });
 });
 
+app.get('/pcb/gerbers', (req, res) => {
+    exec(`kikit export gerber ${testGerberFilepath} .`, {
+        cwd: __dirname + '/tmp'
+    }, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+            res.status(500).send(stderr);
+        }
+        let frontGerber = __dirname + `/tmp/${testGerberName}-CuTop.gtl`;
+        let front = fs.readFileSync(frontGerber).toString();
+        res.status(200).send(front);
+    });
+});
+
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         // TODO: compile to gerber, visualize gerber, gerber -> G-Code
