@@ -249,10 +249,11 @@ function generateGerberPlots() {
             const plotResult = plot(readResult);
             const renderLayersResult = renderLayers(plotResult);
             const renderBoardResult = renderBoard(renderLayersResult);
-            const topSvg = stringifySvg(renderBoardResult.top);
-            resolve();
+            const frontSvg = stringifySvg(renderBoardResult.top);
+            const backSvg = stringifySvg(renderBoardResult.bottom);
+            fs.writeFileSync(plotPath('front'), frontSvg);
+            fs.writeFileSync(plotPath('back'), backSvg);
         }).catch((error) => {
-            console.log(error);
             reject(error);
         });
     });
