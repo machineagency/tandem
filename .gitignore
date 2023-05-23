@@ -8,3 +8,8 @@ config/*
 
 tmp/*
 !tmp/placeholder.txt
+
+default/
+!default/*.kicad_pcb
+!default/*.kicad_pco
+!default/*.kicad_sch
