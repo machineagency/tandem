@@ -36,6 +36,7 @@ app.use(cors());
 const port = 3000;
 
 const duetHostname = "192.168.1.2";
+const forwardingPrefix = '/duet'
 
 let pcbName = 'Tiny44';
 let LATEST_REGENERATE_TIME = Date.now();
@@ -90,7 +91,7 @@ const doFetch = () => {
 
 const forward = (originalReq: Request) => {
     return new Promise<NFResponse>((resolve, reject) => {
-        let path = originalReq.url;
+        let path = originalReq.url.slice(forwardingPrefix.length);
         let url = 'http://' + duetHostname + path;
         let method = originalReq.method;
         let body = originalReq.body;
@@ -113,7 +114,7 @@ const forward = (originalReq: Request) => {
     });
 };
 
-app.all('/duet', (req, res) => {
+app.all(`${forwardingPrefix}/*`, (req, res) => {
     forward(req).then((proxyResponse) => {
         // proxyResponse.json()
         proxyResponse.text()
