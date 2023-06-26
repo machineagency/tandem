@@ -14,6 +14,8 @@ type Layer = 'top' | 'drill' | 'outline';
 type Filetype = 'gerber' | 'plot' | 'gcode';
 type Side = 'front' | 'back';
 
+let stepNumber = 1;
+
 function isFiletype(maybeFiletype: any): maybeFiletype is Filetype {
     return maybeFiletype === 'gerber' ||
            maybeFiletype === 'plot' ||
@@ -197,6 +199,16 @@ app.get('/overlay/poll', (req, res) => {
     res.status(200).send({
         message: 'hi'
     });
+});
+
+app.get('/fusion360/poll', (req, res) => {
+    res.status(200).send({
+        status: 'standby',
+        stepNumber: -1
+    });
+});
+
+app.put('/fusion360/stepNumber', (req, res) => {
 });
 
 function watchKicadPcbFile(filepath: Filepath) {
