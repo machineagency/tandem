@@ -193,6 +193,12 @@ app.get('/pcb/poll', (req, res) => {
     });
 });
 
+app.get('/overlay/poll', (req, res) => {
+    res.status(200).send({
+        message: 'hi'
+    });
+});
+
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         NEEDS_REGENERATE = true;
