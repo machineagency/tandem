@@ -47,6 +47,7 @@ def run(context):
         faceTool = None
         adaptiveTool = None
         boreTool = None
+        bore2Tool = None
 
         # searching the face mill and the bull nose using a loop for the roughing operations
         for tool in toolLibrary:
@@ -65,14 +66,18 @@ def run(context):
             #     if diameter >= 1.0 and diameter < 1.4:
             #         adaptiveTool = tool
 
-            if toolType == "flat end mill":
+            if toolType == "flat end mill" and tool.parameters.itemByName('tool_description').expression == "'1/4\" Flat Endmill'":
                 boreTool = tool
+            elif toolType == "face mill":
+                faceTool = tool
+            elif toolType == "ball end mill" and tool.parameters.itemByName('tool_description').expression == "'1/4\" 4\"-long ball end'":
+                bore2Tool = tool
 
             # exit when the 2 tools are found
-            if boreTool:
+            if boreTool and faceTool and bore2Tool:
                 break
-
-        #################### create setup ####################
+        # ui.messageBox(bore2Tool.parameters.itemByName('tool_description').expression)
+        #################### create setup Spoilboard ####################
         cam = adsk.cam.CAM.cast(products.itemByProductType("CAMProductType"))
         setups = cam.setups
         setupInput = setups.createInput(
@@ -87,61 +92,22 @@ def run(context):
         # change some setup properties
         setupInput.name = 'Spoilboard'
         setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
+        param = setupInput.parameters
         # set offset mode
-        setupInput.parameters.itemByName(
-            'job_stockFixedX').expression = '10.5 in'
-        setupInput.parameters.itemByName(
-            'job_stockFixedXMode').expression = "'center'"
+        param.itemByName('job_stockFixedX').expression = '10.5 in'
+        param.itemByName('job_stockFixedXMode').expression = "'center'"
 
-        setupInput.parameters.itemByName(
-            'job_stockFixedY').expression = "10.5 in"
-        setupInput.parameters.itemByName(
-            'job_stockFixedYMode').expression = "'center'"
+        param.itemByName('job_stockFixedY').expression = "10.5 in"
+        param.itemByName('job_stockFixedYMode').expression = "'center'"
 
-        setupInput.parameters.itemByName(
-            'job_stockFixedZ').expression = '1.5 in'
-        setupInput.parameters.itemByName(
-            'job_stockFixedZMode').expression = "'bottom'"
+        param.itemByName('job_stockFixedZ').expression = '1.5 in'
+        param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
-        setupInput.parameters.itemByName(
-            'job_stockFixedZOffset').expression = '0 in'
+        param.itemByName('job_stockFixedZOffset').expression = '0 in'
 
-        setupInput.parameters.itemByName(
-            'job_stockFixedRoundingValue').expression = '0 in'
+        param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
 
-        # set offset stock top
-        # setupInput.parameters.itemByName('job_stockOffsetTop').expression = '2 mm'
-        # # set setup origin
-        # setupInput.parameters.itemByName('wcs_origin_boxPoint').value.value = 'top 1'
-
-        # create the setup
         setup = setups.add(setupInput)
-
-        # #################### face operation ####################
-        # # create a face operation input
-        # input = setup.operations.createInput('face')
-        # input.tool = faceTool
-        # input.displayName = 'Face Operation'
-        # input.parameters.itemByName('tolerance').expression = '0.01 mm'
-        # input.parameters.itemByName(
-        #     'stepover').expression = '0.75 * tool_diameter'
-        # input.parameters.itemByName('direction').expression = "'climb'"
-
-        # # add the operation to the setup
-        # faceOp = setup.operations.add(input)
-
-        # #################### adaptive operation ####################
-        # input = setup.operations.createInput('adaptive')
-        # input.tool = adaptiveTool
-        # input.displayName = 'Adaptive Roughing'
-        # input.parameters.itemByName('tolerance').expression = '0.1 mm'
-        # input.parameters.itemByName('maximumStepdown').expression = '5 mm'
-        # input.parameters.itemByName(
-        #     'fineStepdown').expression = '0.25 * maximumStepdown'
-        # input.parameters.itemByName('flatAreaMachining').expression = 'false'
-
-        # # add the operation to the setup
-        # adaptiveOp = setup.operations.add(input)
 
         #################### bore operation ####################
         input = setup.operations.createInput('bore')
@@ -154,12 +120,152 @@ def run(context):
 
         # add the operation to the setup
         boreOp = setup.operations.add(input)
-
-        ##################### generate operations ####################
         cam.generateToolpath(boreOp)
 
+
+        #################### create setup FoamSurface ####################
+        cam = adsk.cam.CAM.cast(products.itemByProductType("CAMProductType"))
+        setups = cam.setups
+        setupInput = setups.createInput(
+            adsk.cam.OperationTypes.MillingOperation)
+        # create a list for the models to add to the setup Input
+        models = []
+        part = cam.designRootOccurrence.bRepBodies.item(0)
+        # add the part to the model list
+        models.append(part)
+        # pass the model list to the setup input
+        setupInput.models = models
+        # change some setup properties
+        setupInput.name = 'FoamBore'
+        setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
+        param = setupInput.parameters
+        # set offset mode
+        param.itemByName('job_stockFixedX').expression = '10 in'
+        param.itemByName('job_stockFixedXMode').expression = "'center'"
+        param.itemByName('job_stockFixedY').expression = "8 in"
+        param.itemByName('job_stockFixedYMode').expression = "'center'"
+        param.itemByName('job_stockFixedZ').expression = '2 in'
+        param.itemByName('job_stockFixedZMode').expression = "'bottom'"
+        param.itemByName('job_stockFixedZOffset').expression = '0 in'
+        param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
+
+        setup = setups.add(setupInput)
+
+        #################### face operation ####################
+        input = setup.operations.createInput('face')
+        input.tool = faceTool
+        input.displayName = 'Face1'
+        for i in range(faceTool.presets.count):
+            ui.messageBox(boreTool.presets.item(i).name)
+            if str(boreTool.presets.item(i).name) == "omsrud_face":
+                input.toolPreset = boreTool.presets.item(i)
+
+        input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+        input.parameters.itemByName('tool_spindleSpeed').expression = "3055.775 rpm"
+        input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
+        input.parameters.itemByName('tool_feedCutting').expression = "122.2 in/min"
+        input.parameters.itemByName('bottomHeight_mode').expression = "'from point'"
+
+        # add the operation to the setup
+        faceOp = setup.operations.add(input)
+        cam.generateToolpath(faceOp)
+
+
+        #################### create setup FoamBore ####################
+        cam = adsk.cam.CAM.cast(products.itemByProductType("CAMProductType"))
+        setups = cam.setups
+        setupInput = setups.createInput(
+            adsk.cam.OperationTypes.MillingOperation)
+        # create a list for the models to add to the setup Input
+        models = []
+        part = cam.designRootOccurrence.bRepBodies.item(0)
+        # add the part to the model list
+        models.append(part)
+        # pass the model list to the setup input
+        setupInput.models = models
+        # change some setup properties
+        setupInput.name = 'FoamBore'
+        setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
+        param = setupInput.parameters
+        # set offset mode
+        param.itemByName('job_stockFixedX').expression = '10 in'
+        param.itemByName('job_stockFixedXMode').expression = "'center'"
+        param.itemByName('job_stockFixedY').expression = "8 in"
+        param.itemByName('job_stockFixedYMode').expression = "'center'"
+        param.itemByName('job_stockFixedZ').expression = '1.26 in'
+        param.itemByName('job_stockFixedZMode').expression = "'center'"
+        param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
+
+        setup = setups.add(setupInput)
+
+        #################### bore2 operation ####################
+        input = setup.operations.createInput('bore')
+        input.tool = bore2Tool
+        input.displayName = 'Bore2'
+
+        input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+        input.parameters.itemByName('tool_spindleSpeed').expression = "15278.9 rpm"
+        input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
+        input.parameters.itemByName('tool_feedCutting').expression = "397.251 in/min"
+
+
+        # add the operation to the setup
+        bore2Op = setup.operations.add(input)
+        cam.generateToolpath(bore2Op)
+
+
+
+        #################### create setup TopCut ####################
+        cam = adsk.cam.CAM.cast(products.itemByProductType("CAMProductType"))
+        setups = cam.setups
+        setupInput = setups.createInput(
+            adsk.cam.OperationTypes.MillingOperation)
+        # create a list for the models to add to the setup Input
+        models = []
+        part = cam.designRootOccurrence.bRepBodies.item(0)
+        # add the part to the model list
+        models.append(part)
+        # pass the model list to the setup input
+        setupInput.models = models
+        # change some setup properties
+        setupInput.name = 'TopCut'
+        setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
+        param = setupInput.parameters
+        # set offset mode
+        param.itemByName('job_stockFixedX').expression = '10 in'
+        param.itemByName('job_stockFixedXMode').expression = "'center'"
+        param.itemByName('job_stockFixedY').expression = "8 in"
+        param.itemByName('job_stockFixedYMode').expression = "'center'"
+        param.itemByName('job_stockFixedZ').expression = '1.26 in'
+        param.itemByName('job_stockFixedZMode').expression = "'center'"
+        param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
+
+        setup = setups.add(setupInput)
+
+        #################### adaptive operation ####################
+        input = setup.operations.createInput('adaptive')
+        input.tool = bore2Tool
+        input.displayName = 'Adaptive2'
+
+        input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+        input.parameters.itemByName('tool_spindleSpeed').expression = "15278.9 rpm"
+        input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
+        input.parameters.itemByName('tool_feedCutting').expression = "397.251 in/min"
+        input.parameters.itemByName('retractHeight_offset').expression = "0.25 in"
+        input.parameters.itemByName('stockContours').expression = "true"
+        input.parameters.itemByName('tolerance').expression = "0.01in"
+        input.parameters.itemByName('useRestMachining').expression = "false"
+        input.parameters.itemByName('useStockToLeave').expression = "false"
+        input.parameters.itemByName('minimumStepdown').expression = "0.01 in"
+        input.parameters.itemByName('optimalLoad').expression = "0.2 in"
+        input.parameters.itemByName('rampType').expression = "'plunge'"
+
+        # add the operation to the setup
+        bore2Op = setup.operations.add(input)
+        cam.generateToolpath(bore2Op)
+
         #################### ncProgram and post-processing ####################
-        # get the post library from library manager
+        # get the post library from library managerS
         postLibrary = libraryManager.postLibrary
 
         # query post library to get postprocessor list
