@@ -13,13 +13,12 @@ from email.message import Message
 
 from typing import Optional
 
-handlers = []
-myCustomEvent = 'MyCustomEventId'
-customEvent = None
-stopFlag = None
-
 app = adsk.core.Application.get()
 ui = app.userInterface
+handlers = []
+myCustomEvent = 'MyCustomEventId'
+customEvent = app.registerCustomEvent(myCustomEvent)
+stopFlag = threading.Event()
 
 # Response class and request function are copied from Jonathan Bowman's
 # Post on dev.to (https://dev.to/bowmanjd/http-calls-in-python-without-requests-or-other-external-dependencies-5aj1)
@@ -44,9 +43,9 @@ class Response(typing.NamedTuple):
 
 def request(
     url: str,
-    data: dict = None,
-    params: dict = None,
-    headers: dict = None,
+    data: dict = {},
+    params: dict = {},
+    headers: dict = {},
     method: str = "GET",
     data_as_json: bool = True,
     error_count: int = 0,
@@ -62,7 +61,7 @@ def request(
 
     if method == "GET":
         params = {**params, **data}
-        data = None
+        data = {}
 
     if params:
         url += "?" + urllib.parse.urlencode(params, doseq=True, safe="/")
@@ -136,114 +135,19 @@ class MyThread(threading.Thread):
             args = {'Value': random.randint(1000, 10000)/1000}
             app.fireCustomEvent(myCustomEvent, json.dumps(args)) 
 
-# Event handler for commandCreated event.
-class ButtonExampleCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
-    def __init__(self):
-        super().__init__()
-
-    def notify(self, args):
-        # Code to react to the event.
-        app = adsk.core.Application.get()
-        ui = app.userInterface
-        ui.messageBox('In MyCommandCreatedHandler event handler.')
-
-def create_button(app: adsk.core.Application):
-    # Get the UserInterface object and the CommandDefinitions collection.
-    ui = app.userInterface
-    cmdDefs = ui.commandDefinitions
-
-    # Create a button command definition.
-    buttonExample = cmdDefs.addButtonDefinition('MyButtonDefId', 'Sample Button',
-                                                'Sample button tooltip',
-                                                './icons')
-
-    # Connect to the command created event.
-    buttonExampleCreated = ButtonExampleCreatedEventHandler()
-    buttonExample.commandCreated.add(buttonExampleCreated)
-    handlers.append(buttonExampleCreated)
-
-    # Get the "DESIGN" workspace.
-    designWS = ui.workspaces.itemById('FusionSolidEnvironment')
-
-    # Get the Solid > Create panel
-    addInsPanel = designWS.toolbarPanels.itemById('SolidCreatePanel')
-
-    # Add the button to the bottom.
-    buttonControl = addInsPanel.controls.addCommand(buttonExample)
-
-    # Make the button available in the panel.
-    buttonControl.isPromotedByDefault = True
-    buttonControl.isPromoted = True
-
-def cleanup_button(app: adsk.core.Application):
-    # Get the UserInterface object and the CommandDefinitions collection.
-    ui = app.userInterface
-    cmdDefs = ui.commandDefinitions
-
-    # Delete the button definition.
-    buttonExample = ui.commandDefinitions.itemById('MyButtonDefId')
-    if buttonExample:
-        buttonExample.deleteMe()
-
-    # Get the "DESIGN" workspace.
-    designWS = ui.workspaces.itemById('FusionSolidEnvironment')
-
-    # Get panel the control is in.
-    addInsPanel = designWS.toolbarPanels.itemById('SolidCreatePanel')
-
-    # Get and delete the button control.
-    buttonControl = addInsPanel.controls.itemById('MyButtonDefId')
-    if buttonControl:
-        buttonControl.deleteMe()
-
 def run(context):
-    # try:
-    #     # create_button(app)
-    #     maybe_response = request('http://localhost:3000/fusion360/poll')
-    #     if maybe_response:
-    #         ui.messageBox(maybe_response.body)
-    #     else:
-    #         ui.messageBox('Could not connect; check that the server is running.')
-    #         pid = os.fork()
-    #         if pid == 0:
-    #             pass
-    #         else:
-    #             pass
-    # except:
-    #     if ui:
-    #         ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-    # finally:
-    #     # cleanup_button(app)
-    #     if ui:
-    #         ui.terminateActiveCommand()
-    global ui
-    global app
     try:
-        app = adsk.core.Application.get()
-        ui  = app.userInterface
-        
         # Register the custom event and connect the handler.
-        global customEvent
-        customEvent = app.registerCustomEvent(myCustomEvent)
         onThreadEvent = ThreadEventHandler()
         customEvent.add(onThreadEvent)
         handlers.append(onThreadEvent)
 
         # Create a new thread for the other processing.        
-        global stopFlag        
-        stopFlag = threading.Event()
         myThread = MyThread(stopFlag)
         myThread.start()
     except:
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-# def stop(context):
-#     ui.messageBox('Stop called')
-#     app = adsk.core.Application.get()
-#     ui = app.userInterface
-#     # cleanup_button(app)
-#     ui.terminateActiveCommand()
 
 def stop(context):
     try:
