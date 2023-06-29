@@ -135,66 +135,6 @@ class MyThread(threading.Thread):
             args = {'Value': random.randint(1000, 10000)/1000}
             app.fireCustomEvent(myCustomEvent, json.dumps(args)) 
 
-# Event handler for commandCreated event.
-class ButtonExampleCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
-    def __init__(self):
-        super().__init__()
-
-    def notify(self, args):
-        # Code to react to the event.
-        app = adsk.core.Application.get()
-        ui = app.userInterface
-        ui.messageBox('In MyCommandCreatedHandler event handler.')
-
-def create_button(app: adsk.core.Application):
-    # Get the UserInterface object and the CommandDefinitions collection.
-    ui = app.userInterface
-    cmdDefs = ui.commandDefinitions
-
-    # Create a button command definition.
-    buttonExample = cmdDefs.addButtonDefinition('MyButtonDefId', 'Sample Button',
-                                                'Sample button tooltip',
-                                                './icons')
-
-    # Connect to the command created event.
-    buttonExampleCreated = ButtonExampleCreatedEventHandler()
-    buttonExample.commandCreated.add(buttonExampleCreated)
-    handlers.append(buttonExampleCreated)
-
-    # Get the "DESIGN" workspace.
-    designWS = ui.workspaces.itemById('FusionSolidEnvironment')
-
-    # Get the Solid > Create panel
-    addInsPanel = designWS.toolbarPanels.itemById('SolidCreatePanel')
-
-    # Add the button to the bottom.
-    buttonControl = addInsPanel.controls.addCommand(buttonExample)
-
-    # Make the button available in the panel.
-    buttonControl.isPromotedByDefault = True
-    buttonControl.isPromoted = True
-
-def cleanup_button(app: adsk.core.Application):
-    # Get the UserInterface object and the CommandDefinitions collection.
-    ui = app.userInterface
-    cmdDefs = ui.commandDefinitions
-
-    # Delete the button definition.
-    buttonExample = ui.commandDefinitions.itemById('MyButtonDefId')
-    if buttonExample:
-        buttonExample.deleteMe()
-
-    # Get the "DESIGN" workspace.
-    designWS = ui.workspaces.itemById('FusionSolidEnvironment')
-
-    # Get panel the control is in.
-    addInsPanel = designWS.toolbarPanels.itemById('SolidCreatePanel')
-
-    # Get and delete the button control.
-    buttonControl = addInsPanel.controls.itemById('MyButtonDefId')
-    if buttonControl:
-        buttonControl.deleteMe()
-
 def run(context):
     try:
         # Register the custom event and connect the handler.
