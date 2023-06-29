@@ -201,6 +201,25 @@ app.get('/overlay/poll', (req, res) => {
     });
 });
 
+app.put('/overlay/latestSvg', (req, res) => {
+    console.log(req.body);
+    const svgData = req.body;
+    const filePath = './overlay/public/latest-svg.svg';
+    fs.writeFile(filePath, svgData, (err) => {
+        if (err) {
+            console.error('Error writing SVG file:', err);
+            res.status(500).send({
+                message: 'Error writing SVG file'
+            });
+        } else {
+            console.log('SVG file saved successfully');
+            res.status(200).send({
+                message: 'SVG file saved successfully'
+            });
+        }
+    });
+});
+
 app.get('/fusion360/poll', (req, res) => {
     res.status(200).send({
         status: 'standby',
@@ -302,6 +321,6 @@ function generateGCodes() {
 
 app.listen(port, () => {
     console.log(`Exprimer Server listening on port ${port}`);
-    watchKicadPcbFile(pcbPath());
-    compilePCB();
+    //watchKicadPcbFile(pcbPath());
+    //compilePCB();
 });

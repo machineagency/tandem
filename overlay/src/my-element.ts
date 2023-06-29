@@ -3,6 +3,8 @@ import { customElement, property } from 'lit/decorators.js'
 import litLogo from './assets/lit.svg'
 import viteLogo from '/vite.svg'
 
+import svgContent from '/latest-svg.svg';
+
 /**
  * An example element.
  *
@@ -26,20 +28,8 @@ export class MyElement extends LitElement {
   render() {
     return html`
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src=${viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://lit.dev" target="_blank">
-          <img src=${litLogo} class="logo lit" alt="Lit logo" />
-        </a>
+        <img src=${svgContent} class="logo" />
       </div>
-      <slot></slot>
-      <div class="card">
-        <button @click=${this._onClick} part="button">
-          count is ${this.count}
-        </button>
-      </div>
-      <p class="read-the-docs">${this.docsHint}</p>
     `
   }
 
@@ -56,7 +46,7 @@ export class MyElement extends LitElement {
     }
 
     .logo {
-      height: 6em;
+      height: 300 px;
       padding: 1.5em;
       will-change: filter;
       transition: filter 300ms;
