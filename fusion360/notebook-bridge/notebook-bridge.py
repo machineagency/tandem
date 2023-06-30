@@ -15,6 +15,7 @@ from typing import Optional
 
 app = adsk.core.Application.get()
 ui = app.userInterface
+design = adsk.fusion.Design.cast(app.activeProduct)
 handlers = []
 myCustomEvent = 'MyCustomEventId'
 customEvent = app.registerCustomEvent(myCustomEvent)
@@ -110,13 +111,26 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                             
             # Get the value from the JSON data passed through the event.
             eventArgs = json.loads(args.additionalInfo)
-            newValue = float(eventArgs['Value'])
+            # Now 'eventArgs' is a Python dictionary. To get the parameters:
+            params = eventArgs.get('param', [])  # Default to an empty list if 'param' is not found
+
+            # 'params' is now a list of dictionaries, each representing a parameter.
+            # To get the value of the first parameter, for example:
+            first_param = params[0] if params else None
+            unitsMgr = design.unitsManager
+            for param in params:
+                paramName = first_param_name = param.get('paramName')
+                pre_expression = unitsMgr.evaluateExpression
+                (
+                    str(param.get('paramValue')),
+                    str(param.get('paramUnit'))
+                )
+                expression = adsk.core.ValueInput.createByReal(pre_expression)
+                design.userParameters.add(paramName, expression, str(param.get('paramUnit')), '')
+
             
             # Set the parameter value.
-            design = adsk.fusion.Design.cast(app.activeProduct)
-            param = design.rootComponent.modelParameters.itemByName('Length')
-            if param:
-                param.value = newValue
+
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
