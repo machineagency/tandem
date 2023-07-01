@@ -1,10 +1,30 @@
 import { LitElement, css, html } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { customElement } from 'lit/decorators.js'
 
 import svgContent from '/latest-svg.svg';
 
 @customElement('my-element')
 export class MyElement extends LitElement {
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    setInterval(this.checkForUpdates.bind(this), 10000);
+  }
+
+  checkForUpdates() {
+    fetch('http://localhost:3000/overlay/latestSvg')
+        .then((response) => response.text())
+        .then((svgData) => {
+            if (!svgContent.includes(svgData)) {
+              console.log(svgData);
+              location.reload();
+            }
+        })
+        .catch((error) => {
+            console.error('Error checking for updates:', error);
+        });
+  }
+
 
   render() {
     return html`

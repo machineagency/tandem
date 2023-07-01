@@ -16,6 +16,7 @@ type Side = 'front' | 'back';
 
 let stepNumber = 1;
 
+
 function isFiletype(maybeFiletype: any): maybeFiletype is Filetype {
     return maybeFiletype === 'gerber' ||
            maybeFiletype === 'plot' ||
@@ -201,10 +202,11 @@ app.get('/overlay/poll', (req, res) => {
     });
 });
 
+const filePath = './overlay/public/latest-svg.svg';
+
 app.put('/overlay/latestSvg', (req, res) => {
-    console.log(req.body);
     const svgData = req.body;
-    const filePath = './overlay/public/latest-svg.svg';
+
     fs.writeFile(filePath, svgData, (err) => {
         if (err) {
             console.error('Error writing SVG file:', err);
@@ -219,6 +221,7 @@ app.put('/overlay/latestSvg', (req, res) => {
         }
     });
 });
+
 
 app.get('/fusion360/poll', (req, res) => {
     res.status(200).send({
