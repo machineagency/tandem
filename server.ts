@@ -235,14 +235,22 @@ app.put('/overlay/latestSvg', (req, res) => {
 });
 
 let latestStep = {
-    name: "todo",
+    name: 'todo',
     marks: [
         {
-            markType: "crosshair",
+            type: 'crosshair',
             location: {
                 x: 20,
                 y: 30
             }
+        },
+        {
+            type: 'text',
+            location: {
+                x: 100,
+                y: 100
+            },
+            text: 'hello'
         }
     ]
 };

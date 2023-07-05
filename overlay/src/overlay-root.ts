@@ -1,8 +1,5 @@
 import { LitElement, css, html } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-
-import svgContent from '/latest-svg.svg';
-import { response } from 'express';
+import { customElement } from 'lit/decorators.js'
 
 import * as paper from 'paper'
 
@@ -22,42 +19,34 @@ type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 
 @customElement('overlay-root')
 export class OverlayRoot extends LitElement {
-  @property()
-  currentStep: Step = {
-    name: "empty",
-    marks: []
-  }
-
   ps = new paper.PaperScope();
 
-  initCanvas(): void {
-    
+  firstUpdated(): void {
+    let canvas = this.shadowRoot?.getElementById('canvas') as HTMLCanvasElement;
+    this.ps.setup(canvas);
+    this.ps.view.scale(1, -1);
   }
 
   connectedCallback(): void {
     super.connectedCallback();
-    setInterval(this.checkForUpdates.bind(this), 10000);
+    setInterval(this.checkForUpdates.bind(this), 1000);
   }
-
-  // checkForUpdates() {
-  //   fetch('http://localhost:3000/overlay/latestSvg')
-  //       .then((response) => response.text())
-  //       .then((svgData) => {
-  //           if (!svgContent.includes(svgData)) {
-  //             console.log(svgData);
-  //             location.reload();
-  //           }
-  //       })
-  //       .catch((error) => {
-  //           console.error('Error checking for updates:', error);
-  //       });
-  // }
 
   checkForUpdates() {
     fetch('http://localhost:3000/overlay/step')
       .then((response) => response.json())
-      .then((json) => console.log(json))
+      .then((json) => {
+        // TODO: validate JSON
+        if (json) {
+          this.updateCanvas(json);
+        }
+      })
       .catch((error) => console.error(error));
+  }
+
+  updateCanvas(step: Step) {
+    this.ps.project.activeLayer.removeChildren();
+    this.compileOverlay(step);
   }
 
   compileOverlay(step: Step): paper.Group {
@@ -70,13 +59,13 @@ export class OverlayRoot extends LitElement {
       case 'arrow':
         break;
       case 'crosshair':
-        break;
+        return this.generateCrosshair(mark);
       case 'box':
         break;
       case 'circle':
         break;
       case 'text':
-        break;
+        return this.generateText(mark);
       case 'mutableBox':
         break;
     }
@@ -84,28 +73,39 @@ export class OverlayRoot extends LitElement {
   }
 
   generateCrosshair(mark: Mark): paper.Group {
-    return new this.ps.Group();
+    let vertical = new this.ps.Path.Line({
+      from: [mark.location.x, mark.location.y],
+      to: [1000, 1000],
+      strokeColor: 'red'
+    });
+    return new this.ps.Group({
+      name: 'crosshair',
+      children: [vertical]
+    });
   }
 
   generateText(mark: Mark): paper.Group {
-    return new this.ps.Group();
+    let text = new this.ps.PointText({
+      point: [mark.location.x, mark.location.y],
+      content: 'The contents of the point text',
+      fillColor: 'red',
+      fontFamily: 'Courier New',
+      fontWeight: 'bold',
+      fontSize: 25
+    });
+    text.scale(1, -1);
+    return new this.ps.Group({
+      name: 'text',
+      children: [text]
+    });
   }
 
   render() {
     return html`
       <div class="container">
-        <div>${this.currentStep.name}</div>
         <canvas id="canvas"></canvas>
       </div>
     `
-  }
-
-  updated() {
-    let canvas = this.shadowRoot?.getElementById('canvas') as HTMLCanvasElement;
-    // Setup must be called before
-    this.ps.setup(canvas);
-    let stepOverlay = this.compileOverlay(this.currentStep);
-    this.ps.project.activeLayer.addChild(stepOverlay);
   }
 
   static styles = css`
