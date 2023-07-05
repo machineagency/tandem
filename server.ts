@@ -8,14 +8,26 @@ import * as path from 'path';
 import { exec } from 'child_process'
 
 import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace/core'
+import * as paper from 'paper'
 
 type Filepath = string;
 type Layer = 'top' | 'drill' | 'outline';
 type Filetype = 'gerber' | 'plot' | 'gcode';
 type Side = 'front' | 'back';
 
-let stepNumber = 1;
+interface Step {
+    name: string;
+    marks: Mark[];
+}
 
+interface Mark {
+    type: MarkType;
+    location: { x: number, y: number };
+    text: string;
+    innerPath: paper.Path;
+}
+
+type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 
 function isFiletype(maybeFiletype: any): maybeFiletype is Filetype {
     return maybeFiletype === 'gerber' ||
@@ -222,6 +234,22 @@ app.put('/overlay/latestSvg', (req, res) => {
     });
 });
 
+let latestStep = {
+    name: "todo",
+    marks: [
+        {
+            markType: "crosshair",
+            location: {
+                x: 20,
+                y: 30
+            }
+        }
+    ]
+};
+
+app.get('/overlay/step', (req, res) => {
+    res.status(200).send(latestStep);
+});
 
 app.get('/fusion360/poll', (req, res) => {
     res.status(200).send({
