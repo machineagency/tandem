@@ -13,7 +13,8 @@ def create_user_parameter(paramName, paramValue, paramUnit):
         paramValueReal = unitsMgr.evaluateExpression(str(paramValue), paramUnit)
         realParamValue = adsk.core.ValueInput.createByReal(paramValueReal)
 
-        design.userParameters.add(paramName, realParamValue, paramUnit, '')
+        if not design.userParameters.itemByName(paramName):
+            design.userParameters.add(paramName, realParamValue, paramUnit, '')
 
     except:
         if ui:

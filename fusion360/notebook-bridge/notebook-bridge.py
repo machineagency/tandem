@@ -9,7 +9,6 @@ import typing
 import urllib.error
 import urllib.parse
 import urllib.request
-from .PropellerCAM import *
 from .CreateUserParameter import *
 from email.message import Message
 
@@ -17,7 +16,6 @@ from typing import Optional
 
 app = adsk.core.Application.get()
 ui = app.userInterface
-design = adsk.fusion.Design.cast(app.activeProduct)
 handlers = []
 myCustomEvent = 'MyCustomEventId'
 customEvent = app.registerCustomEvent(myCustomEvent)
@@ -107,11 +105,11 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
         super().__init__()
     def notify(self, args):
         try:
+            # Make sure a command isn't running before changes are made.
             if ui.activeCommand != 'SelectCommand':
                 ui.commandDefinitions.itemById('SelectCommand').execute()
-                            
-            eventArgs = json.loads(args.additionalInfo)
-            # expected format
+                
+             # expected format
              # {
             #     "create_param": [
             #         {
@@ -125,42 +123,25 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
             #             "unit": "mm"
             #         }
             #     ],
-            #     "setup_cam": [
-            #         {
-            #             "SpoilBoard": args
-            #         },
-            #         {
-            #             "FoamSurface": argss
-            #         }
+            #     "setup_cam": 
+            #      [
+            #         {"SpoilBoard": args},
+            #         { "FoamSurface": argss}
             #     ]
             # }
-            params = eventArgs.get('create_param', [])
-            setup_cam = eventArgs.get('setup_cam', [])
-            for param in params:
-                create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
-            
-            cam = PropellerCAM()
-            # Define a dictionary where the keys are the name of the setups and the values are the methods of PropellerCAM
-            setup_methods = {
-                "SpoilBoard": cam.create_spoil_board,
-                "FoamSurface": cam.create_foam_surface,
-                "FoamBore": cam.create_foam_bore,
-                "TopCut": cam.create_top_cut,
-                "BottomCut": cam.create_bottom_cut,
-            }
-            
-            for setup in setup_cam:
-                # Get the setup name
-                setup_name = list(setup.keys())[0]
-                # Get the method to execute from the dictionary using get, if the key doesn't exist it will return None
-                setup_method = setup_methods.get(setup_name)
-                if setup_method is not None:
-                    # If the setup method exists, execute it
-                    setup_method()
+                
+            maybeResponse = request("http://localhost:3000/fusion360/poll")
+            if maybeResponse.status == 200:  # Check if the request was successful
+                response_json = maybeResponse.json()  # Load JSON data from response
+                params = response_json.get('create_param')
+                if params:
+                    for param in params:
+                        create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
+                
+
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
 
 # The class for the new thread.
 class MyThread(threading.Thread):
@@ -172,7 +153,7 @@ class MyThread(threading.Thread):
     def run(self):
         ui.messageBox('Thread start')
         # Every five seconds fire a custom event, passing a random number.
-        while not self.stopped.wait(1):
+        while not self.stopped.wait(5):
             args = {'Value': random.randint(1000, 10000)/1000}
             app.fireCustomEvent(myCustomEvent, json.dumps(args)) 
 
