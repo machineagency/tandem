@@ -3,8 +3,8 @@ import { customElement } from 'lit/decorators.js'
 
 import svgContent from '/latest-svg.svg';
 
-@customElement('my-element')
-export class MyElement extends LitElement {
+@customElement('overlay-root')
+export class OverlayRoot extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -54,6 +54,6 @@ export class MyElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'my-element': MyElement
+    'overlay-root': OverlayRoot
   }
 }
