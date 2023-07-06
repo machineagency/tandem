@@ -56,6 +56,7 @@ const forwardingPrefix = '/duet'
 let pcbName = 'Tiny44';
 let LATEST_REGENERATE_TIME = Date.now();
 let NEEDS_REGENERATE = false;
+let calibrationRoutineFlag = true;
 
 function pcbPath(): Filepath {
     return `${__dirname}/defaults/${pcbName}.kicad_pcb`;
@@ -236,6 +237,7 @@ app.put('/overlay/latestSvg', (req, res) => {
 
 let latestStep = {
     name: 'todo',
+    status: calibrationRoutineFlag ? 'calibration' : 'step',
     marks: [
         {
             type: 'crosshair',
@@ -270,14 +272,34 @@ app.get('/overlay/step', (req, res) => {
     res.status(200).send(latestStep);
 });
 
-app.get('/fusion360/poll', (req, res) => {
+app.put('/overlay/calibrationRoutine', (req, res) => {
+    calibrationRoutineFlag = true;
     res.status(200).send({
-        status: 'standby',
-        stepNumber: -1
+        message: "ok"
     });
 });
 
-app.put('/fusion360/stepNumber', (req, res) => {
+let latestCommand: any = null;
+
+app.get('/fusion360/poll', (req, res) => {
+    console.log(latestCommand);
+    if (!latestCommand) {
+        res.status(200).send({
+            status: 'standby',
+        });
+    }
+    else {
+        res.status(200).send(latestCommand);
+        //latestCommand = null;
+    }
+});
+
+app.put('/fusion360/command', (req, res) => {
+    latestCommand = req.body;
+    console.log(latestCommand);
+    res.status(200).send({
+        message: "Saved the command."
+    })
 });
 
 function watchKicadPcbFile(filepath: Filepath) {
