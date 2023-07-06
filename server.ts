@@ -251,6 +251,17 @@ let latestStep = {
                 y: 100
             },
             text: 'hello'
+        },
+        {
+            type: 'box',
+            location: {
+                x: 200,
+                y: 250
+            },
+            dimensions: {
+                width: 100,
+                height: 75
+            }
         }
     ]
 };

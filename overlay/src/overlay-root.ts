@@ -11,6 +11,7 @@ interface Step {
 interface Mark {
   type: MarkType;
   location: { x: number, y: number };
+  dimensions: { width: number, height: number };
   text: string;
   innerPath: paper.Path;
 }
@@ -41,7 +42,7 @@ export class OverlayRoot extends LitElement {
           this.updateCanvas(json);
         }
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {});
   }
 
   updateCanvas(step: Step) {
@@ -61,7 +62,7 @@ export class OverlayRoot extends LitElement {
       case 'crosshair':
         return this.generateCrosshair(mark);
       case 'box':
-        break;
+        return this.generateBox(mark);
       case 'circle':
         break;
       case 'text':
@@ -84,10 +85,22 @@ export class OverlayRoot extends LitElement {
     });
   }
 
+  generateBox(mark: Mark): paper.Group {
+    let box = new this.ps.Path.Rectangle({
+      point: [mark.location.x, mark.location.y],
+      size: [mark.dimensions.width, mark.dimensions.height],
+      fillColor: 'red'
+    });
+    return new this.ps.Group({
+      name: 'box',
+      children: [box]
+    });
+  }
+
   generateText(mark: Mark): paper.Group {
     let text = new this.ps.PointText({
       point: [mark.location.x, mark.location.y],
-      content: 'The contents of the point text',
+      content: mark.text,
       fillColor: 'red',
       fontFamily: 'Courier New',
       fontWeight: 'bold',
