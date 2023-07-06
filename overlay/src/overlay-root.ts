@@ -5,6 +5,7 @@ import * as paper from 'paper'
 
 interface Step {
   name: string;
+  status: StepStatus;
   marks: Mark[];
 }
 
@@ -16,12 +17,26 @@ interface Mark {
   innerPath: paper.Path;
 }
 
+type StepStatus = 'step' | 'calibration';
 type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
+                | 'calibrationBox'
 
 @customElement('overlay-root')
 export class OverlayRoot extends LitElement {
   ps = new paper.PaperScope();
   largeNumber = 1000;
+
+  // TODO: a section view
+
+  // inches
+  groundTruth = {
+    height: 16.00,
+    width: 16.75,
+    offsetX: 1.00,
+    offsetY: 0.625
+  };
+
+  scaleFactor = 1;
 
   firstUpdated(): void {
     let canvas = this.shadowRoot?.getElementById('canvas') as HTMLCanvasElement;
@@ -48,7 +63,12 @@ export class OverlayRoot extends LitElement {
 
   updateCanvas(step: Step) {
     this.ps.project.activeLayer.removeChildren();
-    this.compileOverlay(step);
+    if (step.status === 'step') {
+      this.compileOverlay(step);
+    }
+    else if (step.status === 'calibration') {
+      this.generateCalibrationBox();
+    }
   }
 
   compileOverlay(step: Step): paper.Group {
@@ -70,8 +90,69 @@ export class OverlayRoot extends LitElement {
         return this.generateText(mark);
       case 'mutableBox':
         break;
+      case 'calibrationBox':
+        return this.generateCalibrationBox(mark);
     }
     return new paper.Group();
+  }
+
+  generateCalibrationBox(): paper.Group {
+    let box = new this.ps.Path.Rectangle({
+      point: [
+        this.groundTruth.offsetX + this.groundTruth.width / 2,
+        this.groundTruth.offsetY + this.groundTruth.height / 2],
+      size: [this.groundTruth.width, this.groundTruth.height],
+      strokeColor: 'white',
+      selected: true,
+      onMouseDown: () => {
+        console.log('hi');
+      }
+    });
+    let origBox = box.clone({ insert: false });
+    let tool = new this.ps.Tool();
+    let activeSegment: paper.Segment | null = null;
+    tool.onMouseDown = (event: paper.MouseEvent) => {
+      let envPathOptions = {
+        segments: true,
+        stroke: true,
+        tolerance: 25
+      };
+      let envPathHitResult = box.hitTest(event.point, envPathOptions);
+      if (
+        box.selected &&
+        envPathHitResult &&
+        envPathHitResult.type === "segment"
+      ) {
+        activeSegment = envPathHitResult.segment;
+      }
+    };
+    tool.onMouseDrag = (event: paper.MouseEvent) => {
+      if (box.selected && activeSegment) {
+        activeSegment.point = activeSegment.point.add(
+          event.delta
+        );
+      }
+    };
+    tool.onMouseUp = (event: paper.MouseEvent) => {
+      activeSegment = null;
+      let unpackPoint = (pt: paper.Point) => [pt.x, pt.y];
+      let origPoints = origBox.segments
+        .map((segment) => segment.point.clone())
+        .map(unpackPoint)
+        .flat();
+      let transPoints = box.segments
+        .map((segment) => segment.point.clone())
+        .map(unpackPoint)
+        .flat();
+      // let h = PerspT(origPoints, transPoints);
+      // mutable homography = h;
+    };
+    return new this.ps.Group({
+      name: 'calibrationBox',
+      tool: tool,
+      originalBox: origBox,
+      children: [box]
+    });
   }
 
   generateCrosshair(mark: Mark): paper.Group {
