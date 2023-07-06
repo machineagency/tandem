@@ -240,8 +240,8 @@ let latestStep = {
         {
             type: 'crosshair',
             location: {
-                x: 20,
-                y: 30
+                x: 120,
+                y: 130
             }
         },
         {

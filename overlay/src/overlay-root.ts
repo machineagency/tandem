@@ -21,6 +21,7 @@ type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 @customElement('overlay-root')
 export class OverlayRoot extends LitElement {
   ps = new paper.PaperScope();
+  largeNumber = 1000;
 
   firstUpdated(): void {
     let canvas = this.shadowRoot?.getElementById('canvas') as HTMLCanvasElement;
@@ -75,13 +76,18 @@ export class OverlayRoot extends LitElement {
 
   generateCrosshair(mark: Mark): paper.Group {
     let vertical = new this.ps.Path.Line({
-      from: [mark.location.x, mark.location.y],
-      to: [1000, 1000],
+      from: [mark.location.x, 0],
+      to: [mark.location.x, this.largeNumber],
+      strokeColor: 'red'
+    });
+    let horizontal = new this.ps.Path.Line({
+      from: [0, mark.location.y],
+      to: [this.largeNumber, mark.location.y],
       strokeColor: 'red'
     });
     return new this.ps.Group({
       name: 'crosshair',
-      children: [vertical]
+      children: [vertical, horizontal]
     });
   }
 
