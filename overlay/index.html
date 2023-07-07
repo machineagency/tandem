@@ -7,9 +7,35 @@
     <title>AR Overlay</title>
     <link rel="stylesheet" href="./src/index.css" />
     <script type="module" src="/src/overlay-root.ts"></script>
+    <style>
+      .container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container canvas {
+        background-color: black;
+        height: 100%;
+        width: 100%;
+      }
+
+      .svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    </style>
   </head>
   <body>
-    <overlay-root>
-    </overlay-root>
+    <!-- <overlay-root>
+    </overlay-root> -->
+    <div class="container">
+      <canvas id="canvas"></canvas>
+    </div>
   </body>
 </html>

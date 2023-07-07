@@ -1,6 +1,3 @@
-import { LitElement, css, html } from 'lit'
-import { customElement } from 'lit/decorators.js'
-
 import * as paper from 'paper'
 
 interface Step {
@@ -21,8 +18,8 @@ type StepStatus = 'step' | 'calibration';
 type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
                 | 'calibrationBox'
 
-@customElement('overlay-root')
-export class OverlayRoot extends LitElement {
+// @customElement('overlay-root')
+export class OverlayRoot {
   ps = new paper.PaperScope();
   largeNumber = 1000;
 
@@ -36,17 +33,14 @@ export class OverlayRoot extends LitElement {
     offsetY: 0.625
   };
 
-  scaleFactor = 1;
+  scaleFactor = 10;
 
-  firstUpdated(): void {
-    let canvas = this.shadowRoot?.getElementById('canvas') as HTMLCanvasElement;
+  constructor() {
+    let canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.ps.setup(canvas);
     this.ps.view.scale(1, -1);
-  }
-
-  connectedCallback(): void {
-    super.connectedCallback();
-    setInterval(this.checkForUpdates.bind(this), 1000);
+    this.generateCalibrationBox();
+    // setInterval(this.checkForUpdates.bind(this), 1000);
   }
 
   checkForUpdates() {
@@ -62,12 +56,12 @@ export class OverlayRoot extends LitElement {
   }
 
   updateCanvas(step: Step) {
-    this.ps.project.activeLayer.removeChildren();
     if (step.status === 'step') {
+      this.ps.project.activeLayer.removeChildren();
       this.compileOverlay(step);
     }
     else if (step.status === 'calibration') {
-      this.generateCalibrationBox();
+      // this.generateCalibrationBox();
     }
   }
 
@@ -91,7 +85,7 @@ export class OverlayRoot extends LitElement {
       case 'mutableBox':
         break;
       case 'calibrationBox':
-        return this.generateCalibrationBox(mark);
+        return this.generateCalibrationBox();
     }
     return new paper.Group();
   }
@@ -103,11 +97,9 @@ export class OverlayRoot extends LitElement {
         this.groundTruth.offsetY + this.groundTruth.height / 2],
       size: [this.groundTruth.width, this.groundTruth.height],
       strokeColor: 'white',
-      selected: true,
-      onMouseDown: () => {
-        console.log('hi');
-      }
+      selected: true
     });
+    box.scale(this.scaleFactor, this.scaleFactor);
     let origBox = box.clone({ insert: false });
     let tool = new this.ps.Tool();
     let activeSegment: paper.Segment | null = null;
@@ -131,6 +123,9 @@ export class OverlayRoot extends LitElement {
         activeSegment.point = activeSegment.point.add(
           event.delta
         );
+        console.log(activeSegment.point);
+        box.strokeWidth = 5;
+        this.ps.view.update();
       }
     };
     tool.onMouseUp = (event: paper.MouseEvent) => {
@@ -150,7 +145,7 @@ export class OverlayRoot extends LitElement {
     return new this.ps.Group({
       name: 'calibrationBox',
       tool: tool,
-      originalBox: origBox,
+      // originalBox: origBox,
       children: [box]
     });
   }
@@ -199,42 +194,11 @@ export class OverlayRoot extends LitElement {
       children: [text]
     });
   }
-
-  render() {
-    return html`
-      <div class="container">
-        <canvas id="canvas"></canvas>
-      </div>
-    `
-  }
-
-  static styles = css`
-    .container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .container canvas {
-      background-color: black;
-      height: 100%;
-      width: 100%;
-    }
-
-    .svg {
-      max-width: 100%;
-      max-height: 100%;
-    }
-  `
 }
 
-declare global {
-  interface HTMLElementTagNameMap {
-    'overlay-root': OverlayRoot
-  }
+function main() {
+  let overlayRoot = new OverlayRoot();
+  (window as any).oRoot = overlayRoot;
 }
+
+main();
