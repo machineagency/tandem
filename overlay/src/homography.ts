@@ -362,12 +362,12 @@ function getNormalizationCoefficients(srcPts, dstPts, isInverse) {
   return matX;
 }
 
-export function PerspT(srcPts, dstPts) {
+export function Homography(srcPts, dstPts) {
   if (
     (typeof window !== "undefined" && window === this) ||
     this === undefined
   ) {
-    return new PerspT(srcPts, dstPts);
+    return new Homography(srcPts, dstPts);
   }
 
   this.srcPts = srcPts;
@@ -382,7 +382,7 @@ export function PerspT(srcPts, dstPts) {
   return this;
 }
 
-PerspT.prototype = {
+Homography.prototype = {
   transform: function (x, y) {
     var coordinates = [];
     coordinates[0] =

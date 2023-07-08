@@ -1,5 +1,5 @@
 import * as paper from 'paper'
-import { PerspT } from './homography'
+import { Homography } from './homography'
 
 interface Step {
   name: string;
