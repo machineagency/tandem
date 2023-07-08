@@ -1,4 +1,5 @@
 import * as paper from 'paper'
+import { PerspT } from './homography'
 
 interface Step {
   name: string;
@@ -93,13 +94,12 @@ export class OverlayRoot {
   generateCalibrationBox(): paper.Group {
     let box = new this.ps.Path.Rectangle({
       point: [
-        this.groundTruth.offsetX + this.groundTruth.width / 2,
-        this.groundTruth.offsetY + this.groundTruth.height / 2],
-      size: [this.groundTruth.width, this.groundTruth.height],
+        this.scaleFactor * (this.groundTruth.offsetX + this.groundTruth.width / 2),
+        this.scaleFactor * (this.groundTruth.offsetY + this.groundTruth.height / 2)],
+      size: [this.groundTruth.width * this.scaleFactor, this.groundTruth.height * this.scaleFactor],
       strokeColor: 'white',
       selected: true
     });
-    box.scale(this.scaleFactor, this.scaleFactor);
     let origBox = box.clone({ insert: false });
     let tool = new this.ps.Tool();
     let activeSegment: paper.Segment | null = null;
@@ -123,9 +123,6 @@ export class OverlayRoot {
         activeSegment.point = activeSegment.point.add(
           event.delta
         );
-        console.log(activeSegment.point);
-        box.strokeWidth = 5;
-        this.ps.view.update();
       }
     };
     tool.onMouseUp = (event: paper.MouseEvent) => {
@@ -139,13 +136,13 @@ export class OverlayRoot {
         .map((segment) => segment.point.clone())
         .map(unpackPoint)
         .flat();
-      // let h = PerspT(origPoints, transPoints);
-      // mutable homography = h;
+        let h = PerspT(origPoints, transPoints);
+        console.log(h);
     };
     return new this.ps.Group({
       name: 'calibrationBox',
       tool: tool,
-      // originalBox: origBox,
+      originalBox: origBox,
       children: [box]
     });
   }
