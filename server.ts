@@ -279,6 +279,47 @@ app.put('/overlay/calibrationRoutine', (req, res) => {
     });
 });
 
+app.get('/overlay/homography', (req, res) => {
+    try {
+        let h = fs.readFileSync('./tmp/homography.json').toString();
+        res.status(200).send({
+            homography: h
+        });
+    }
+    catch (error) {
+        res.status(500).send({
+            message: 'Could not read homography on the server.'
+        });
+    }
+});
+
+app.put('/overlay/homography', (req, res) => {
+    let validateHomography = (maybeHomography: any) => {
+        // TODO: improve this validation
+        return maybeHomography.srcPts && maybeHomography.dstPts;
+    };
+    try {
+        let hRaw = req.body;
+        let deflatedHomography = JSON.parse(hRaw);
+        if (!validateHomography(deflatedHomography)) {
+            res.status(400).send({
+                message: 'Invalid homography: valid JSON, but not valid attributes.'
+            })
+        }
+        else {
+            fs.writeFileSync('./tmp/homography.json', hRaw);
+            res.status(200).send({
+                message: 'Saved homography.'
+            });
+        }
+    }
+    catch (error) {
+        res.status(400).send({
+            message: 'Invalid homography: invalid JSON or unable to save file.'
+        })
+    }
+});
+
 let latestCommand: any = null;
 
 app.get('/fusion360/poll', (req, res) => {

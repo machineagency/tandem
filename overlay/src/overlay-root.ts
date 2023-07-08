@@ -17,12 +17,13 @@ interface Mark {
 
 type StepStatus = 'step' | 'calibration';
 type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
-                | 'calibrationBox'
+                | 'calibrationBox';
 
 // @customElement('overlay-root')
 export class OverlayRoot {
   ps = new paper.PaperScope();
   largeNumber = 1000;
+  baseUrl = 'http://localhost:3000'
 
   // TODO: a section view
 
@@ -53,7 +54,7 @@ export class OverlayRoot {
           this.updateCanvas(json);
         }
       })
-      .catch((error) => {});
+      .catch((_) => {});
   }
 
   updateCanvas(step: Step) {
@@ -125,7 +126,7 @@ export class OverlayRoot {
         );
       }
     };
-    tool.onMouseUp = (event: paper.MouseEvent) => {
+    tool.onMouseUp = (_: paper.MouseEvent) => {
       activeSegment = null;
       let unpackPoint = (pt: paper.Point) => [pt.x, pt.y];
       let origPoints = origBox.segments
@@ -136,8 +137,12 @@ export class OverlayRoot {
         .map((segment) => segment.point.clone())
         .map(unpackPoint)
         .flat();
-        let h = PerspT(origPoints, transPoints);
-        console.log(h);
+        let homography = Homography(origPoints, transPoints);
+        let deflatedHomography = JSON.stringify(homography);
+        fetch(this.baseUrl + '/overlay/homography', {
+          method: 'PUT',
+          body: deflatedHomography
+        });
     };
     return new this.ps.Group({
       name: 'calibrationBox',
