@@ -21,9 +21,13 @@ type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 
 // @customElement('overlay-root')
 export class OverlayRoot {
+  static I = [
+    1, 0, 0, 0, 1, 0, 0, 0, 1
+  ];
   ps = new paper.PaperScope();
   largeNumber = 1000;
-  baseUrl = 'http://localhost:3000'
+  baseUrl = 'http://localhost:3000';
+  homography = Homography(OverlayRoot.I, OverlayRoot.I);
 
   // TODO: a section view
 
@@ -67,8 +71,38 @@ export class OverlayRoot {
     }
   }
 
+  fetchHomography () {
+    fetch('http://localhost:3000/overlay/homography')
+      .then((response) => response.json())
+      .then((deflatedH) => {
+        if (!(deflatedH.srcPts && deflatedH.dstPts)) {
+          throw Error();
+        }
+        this.homography = Homography(deflatedH.srcPts, deflatedH.dstPts);
+      });
+  }
+
+  applyHomography(g: paper.Group): void {
+    let transformGroup = (group: paper.Group) => {
+      group.children.forEach((i: paper.Item) => {
+        if (i.className === 'Path') {
+          let p = i as paper.Path;
+          p.segments.forEach((seg) => {
+            let transformedXY = this.homography.transform(seg.point.x, seg.point.y);
+            seg.point.set(transformedXY[0], transformedXY[1]);
+          });
+        }
+        else if (i.className === 'Group') {
+          transformGroup(i as paper.Group);
+        }
+      });
+    };
+    transformGroup(g);
+  }
+
   compileOverlay(step: Step): paper.Group {
     let compiledMarks = step.marks.map(step => this.compileMark(step));
+    compiledMarks.map(g => this.applyHomography(g));
     return new this.ps.Group(compiledMarks);
   }
 

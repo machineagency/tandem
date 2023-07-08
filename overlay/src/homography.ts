@@ -362,7 +362,16 @@ function getNormalizationCoefficients(srcPts, dstPts, isInverse) {
   return matX;
 }
 
-export function Homography(srcPts, dstPts) {
+export interface Homography {
+  coeffs: number[];
+  coeffsInv: number[];
+  srcPts: number[];
+  dstPts: number[];
+  transform: (x: number, y: number) => number[];
+  transformInverse: (x: number, y: number) => number[];
+}
+
+export function Homography(srcPts, dstPts): Homography {
   if (
     (typeof window !== "undefined" && window === this) ||
     this === undefined
