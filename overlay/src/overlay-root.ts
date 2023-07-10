@@ -24,10 +24,17 @@ export class OverlayRoot {
   static I = [
     1, 0, 0, 0, 1, 0, 0, 0, 1
   ];
+  static UNIT_SQUARE_POINTS = [
+    0, 0,
+    1, 0,
+    1, 1,
+    0, 1
+  ];
   ps = new paper.PaperScope();
   largeNumber = 1000;
   baseUrl = 'http://localhost:3000';
-  homography = Homography(OverlayRoot.I, OverlayRoot.I);
+  homography = Homography(OverlayRoot.UNIT_SQUARE_POINTS,
+                          OverlayRoot.UNIT_SQUARE_POINTS);
 
   // TODO: a section view
 
