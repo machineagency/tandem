@@ -15,7 +15,7 @@ interface Mark {
   innerPath: paper.Path;
 }
 
-type StepStatus = 'step' | 'calibration';
+type StepStatus = 'standby' |'step' | 'calibration';
 type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
                 | 'calibrationBox';
 
@@ -52,12 +52,15 @@ export class OverlayRoot {
     let canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.ps.setup(canvas);
     this.ps.view.scale(1, -1);
-    this.generateCalibrationBox();
-    // setInterval(this.checkForUpdates.bind(this), 1000);
+    this.fetchHomography().then((h) => {
+      this.homography = h;
+      this.checkForUpdates();
+      setInterval(this.checkForUpdates.bind(this), 1000);
+    });
   }
 
   checkForUpdates() {
-    fetch('http://localhost:3000/overlay/step')
+    fetch('http://localhost:3000/overlay/poll')
       .then((response) => response.json())
       .then((json) => {
         // TODO: validate JSON
@@ -74,19 +77,23 @@ export class OverlayRoot {
       this.compileOverlay(step);
     }
     else if (step.status === 'calibration') {
-      // this.generateCalibrationBox();
+      this.ps.project.activeLayer.removeChildren();
+      this.generateCalibrationBox();
     }
   }
 
   fetchHomography () {
-    fetch('http://localhost:3000/overlay/homography')
-      .then((response) => response.json())
-      .then((deflatedH) => {
-        if (!(deflatedH.srcPts && deflatedH.dstPts)) {
-          throw Error();
-        }
-        this.homography = Homography(deflatedH.srcPts, deflatedH.dstPts);
-      });
+    return new Promise<Homography>((resolve, _) => {
+      fetch('http://localhost:3000/overlay/homography')
+        .then((response) => response.json())
+        .then((json) => {
+          let deflatedH = JSON.parse(json.homography);
+          if (!(deflatedH && deflatedH.srcPts && deflatedH.dstPts)) {
+            throw Error();
+          }
+          resolve(Homography(deflatedH.srcPts, deflatedH.dstPts));
+        });
+    });
   }
 
   applyHomography(g: paper.Group): void {

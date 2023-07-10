@@ -209,12 +209,6 @@ app.get('/pcb/poll', (req, res) => {
     });
 });
 
-app.get('/overlay/poll', (req, res) => {
-    res.status(200).send({
-        message: 'hi'
-    });
-});
-
 const filePath = './overlay/public/latest-svg.svg';
 
 app.put('/overlay/latestSvg', (req, res) => {
@@ -237,7 +231,7 @@ app.put('/overlay/latestSvg', (req, res) => {
 
 let latestStep = {
     name: 'todo',
-    status: calibrationRoutineFlag ? 'calibration' : 'step',
+    status: 'step',
     marks: [
         {
             type: 'crosshair',
@@ -268,7 +262,7 @@ let latestStep = {
     ]
 };
 
-app.get('/overlay/step', (req, res) => {
+app.get('/overlay/poll', (req, res) => {
     res.status(200).send(latestStep);
 });
 
