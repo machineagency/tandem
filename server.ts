@@ -4,7 +4,6 @@ import * as express from 'express';
 import { Request, Response } from 'express';
 import * as cors from 'cors';
 import * as fs from 'fs';
-import * as path from 'path';
 import { exec } from 'child_process'
 
 import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace/core'
@@ -14,9 +13,12 @@ type Filepath = string;
 type Layer = 'top' | 'drill' | 'outline';
 type Filetype = 'gerber' | 'plot' | 'gcode';
 type Side = 'front' | 'back';
+type OverlayCommandType = 'step' | 'calibration' | 'standby';
+type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 
-interface Step {
+interface OverlayCommand {
     name: string;
+    type: OverlayCommandType;
     marks: Mark[];
 }
 
@@ -26,8 +28,6 @@ interface Mark {
     text: string;
     innerPath: paper.Path;
 }
-
-type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
 
 function isFiletype(maybeFiletype: any): maybeFiletype is Filetype {
     return maybeFiletype === 'gerber' ||
@@ -46,7 +46,7 @@ function isSide(maybeSide: any): maybeSide is Side {
 }
 
 const app = express();
-app.use(express.text());
+app.use(express.json());
 app.use(cors());
 const port = 3000;
 
@@ -56,7 +56,74 @@ const forwardingPrefix = '/duet'
 let pcbName = 'Tiny44';
 let LATEST_REGENERATE_TIME = Date.now();
 let NEEDS_REGENERATE = false;
-let calibrationRoutineFlag = true;
+let latestOverlayCommand: OverlayCommand | null = null;
+
+let sampleOverlayCommand = {
+    name: 'todo',
+    type: 'calibration',
+    marks: [
+        {
+            type: 'crosshair',
+            location: {
+                x: 120,
+                y: 130
+            }
+        },
+        {
+            type: 'text',
+            location: {
+                x: 100,
+                y: 100
+            },
+            text: 'hello'
+        },
+        {
+            type: 'box',
+            location: {
+                x: 200,
+                y: 250
+            },
+            dimensions: {
+                width: 100,
+                height: 75
+            }
+        }
+    ]
+};
+
+app.get('/overlay/poll', (req, res) => {
+    if (!latestOverlayCommand) {
+        let standbyCommand: OverlayCommand = {
+            name: 'standby',
+            type: 'standby',
+            marks: []
+        };
+        res.status(200).send(standbyCommand);
+    }
+    else {
+        res.status(200).send(latestOverlayCommand);
+        latestOverlayCommand = null;
+    }
+});
+
+app.put('/overlay/command', (req, res) => {
+    let validateCommand = (c: any) => {
+        return !!(c && (c.type === 'step' || c.type === 'calibration'
+                        || c.type === 'standby'));
+    };
+    let cmd = req.body;
+    if (!validateCommand(cmd)) {
+        res.status(500).send({
+            message: 'Invalid overlay command.'
+        });
+    }
+    else {
+        latestOverlayCommand = req.body;
+        res.status(200).send({
+            message: 'Overlay command saved to server.'
+        });
+    }
+});
 
 function pcbPath(): Filepath {
     return `${__dirname}/defaults/${pcbName}.kicad_pcb`;
@@ -229,49 +296,6 @@ app.put('/overlay/latestSvg', (req, res) => {
     });
 });
 
-let latestStep = {
-    name: 'todo',
-    status: 'step',
-    marks: [
-        {
-            type: 'crosshair',
-            location: {
-                x: 120,
-                y: 130
-            }
-        },
-        {
-            type: 'text',
-            location: {
-                x: 100,
-                y: 100
-            },
-            text: 'hello'
-        },
-        {
-            type: 'box',
-            location: {
-                x: 200,
-                y: 250
-            },
-            dimensions: {
-                width: 100,
-                height: 75
-            }
-        }
-    ]
-};
-
-app.get('/overlay/poll', (req, res) => {
-    res.status(200).send(latestStep);
-});
-
-app.put('/overlay/calibrationRoutine', (req, res) => {
-    calibrationRoutineFlag = true;
-    res.status(200).send({
-        message: "ok"
-    });
-});
 
 app.get('/overlay/homography', (req, res) => {
     try {

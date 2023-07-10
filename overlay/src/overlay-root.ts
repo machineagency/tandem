@@ -3,7 +3,7 @@ import { Homography } from './homography'
 
 interface Step {
   name: string;
-  status: StepStatus;
+  type: StepStatus;
   marks: Mark[];
 }
 
@@ -33,8 +33,7 @@ export class OverlayRoot {
   ps = new paper.PaperScope();
   largeNumber = 1000;
   baseUrl = 'http://localhost:3000';
-  homography = Homography(OverlayRoot.UNIT_SQUARE_POINTS,
-                          OverlayRoot.UNIT_SQUARE_POINTS);
+  currMode: StepStatus = 'standby';
 
   // TODO: a section view
 
@@ -52,11 +51,7 @@ export class OverlayRoot {
     let canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.ps.setup(canvas);
     this.ps.view.scale(1, -1);
-    this.fetchHomography().then((h) => {
-      this.homography = h;
-      this.checkForUpdates();
-      setInterval(this.checkForUpdates.bind(this), 1000);
-    });
+    setInterval(this.checkForUpdates.bind(this), 1000);
   }
 
   checkForUpdates() {
@@ -72,13 +67,18 @@ export class OverlayRoot {
   }
 
   updateCanvas(step: Step) {
-    if (step.status === 'step') {
+    if (step.type === 'step' && this.currMode !== 'step') {
       this.ps.project.activeLayer.removeChildren();
-      this.compileOverlay(step);
+      this.fetchHomography().then((h) => {
+        this.compileOverlay(step, h);
+      });
     }
-    else if (step.status === 'calibration') {
+    else if (step.type === 'calibration' && this.currMode != 'calibration') {
       this.ps.project.activeLayer.removeChildren();
       this.generateCalibrationBox();
+    }
+    else if (step.type === 'standby' && this.currMode != 'standby') {
+      // noop
     }
   }
 
@@ -96,13 +96,13 @@ export class OverlayRoot {
     });
   }
 
-  applyHomography(g: paper.Group): void {
+  applyHomography(h: Homography, g: paper.Group): void {
     let transformGroup = (group: paper.Group) => {
       group.children.forEach((i: paper.Item) => {
         if (i.className === 'Path') {
           let p = i as paper.Path;
           p.segments.forEach((seg) => {
-            let transformedXY = this.homography.transform(seg.point.x, seg.point.y);
+            let transformedXY = h.transform(seg.point.x, seg.point.y);
             seg.point.set(transformedXY[0], transformedXY[1]);
           });
         }
@@ -114,9 +114,9 @@ export class OverlayRoot {
     transformGroup(g);
   }
 
-  compileOverlay(step: Step): paper.Group {
+  compileOverlay(step: Step, h: Homography): paper.Group {
     let compiledMarks = step.marks.map(step => this.compileMark(step));
-    compiledMarks.map(g => this.applyHomography(g));
+    compiledMarks.map(g => this.applyHomography(h, g));
     return new this.ps.Group(compiledMarks);
   }
 
