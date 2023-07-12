@@ -106,7 +106,16 @@ export class OverlayRoot {
             seg.point.set(transformedXY[0], transformedXY[1]);
           });
         }
+        else if (i.className === 'PointText') {
+          // We can't warp the text itself but at least we can position
+          // it properly.
+          let startPoint = (i as paper.PointText).point;
+          let transformedPoint = h.transform(startPoint.x, startPoint.y);
+          (i as paper.PointText).point.set(transformedPoint[0],
+                                           transformedPoint[1]);
+        }
         else if (i.className === 'Group') {
+          // Recurse on the group's children
           transformGroup(i as paper.Group);
         }
       });
@@ -255,7 +264,10 @@ export class OverlayRoot {
 
   generateText(mark: Mark): paper.Group {
     let text = new this.ps.PointText({
-      point: [mark.location.x, mark.location.y],
+      point: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * mark.location.y
+      ],
       content: mark.text,
       fillColor: 'red',
       fontFamily: 'Courier New',
