@@ -42,10 +42,10 @@ export class OverlayRoot {
     height: 16.00,
     width: 16.75,
     offsetX: 1.00,
-    offsetY: 0.625
+    offsetY: 0.75
   };
 
-  scaleFactor = 10;
+  scaleFactor = 20;
 
   constructor() {
     let canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -67,17 +67,17 @@ export class OverlayRoot {
   }
 
   updateCanvas(step: Step) {
-    if (step.type === 'step' && this.currMode !== 'step') {
+    if (step.type === 'step') {
       this.ps.project.activeLayer.removeChildren();
       this.fetchHomography().then((h) => {
         this.compileOverlay(step, h);
       });
     }
-    else if (step.type === 'calibration' && this.currMode != 'calibration') {
+    else if (step.type === 'calibration') {
       this.ps.project.activeLayer.removeChildren();
       this.generateCalibrationBox();
     }
-    else if (step.type === 'standby' && this.currMode != 'standby') {
+    else if (step.type === 'standby') {
       // noop
     }
   }
@@ -143,13 +143,16 @@ export class OverlayRoot {
   generateCalibrationBox(): paper.Group {
     let box = new this.ps.Path.Rectangle({
       point: [
-        this.scaleFactor * (this.groundTruth.offsetX + this.groundTruth.width / 2),
-        this.scaleFactor * (this.groundTruth.offsetY + this.groundTruth.height / 2)],
+        this.scaleFactor * this.groundTruth.offsetX,
+        this.scaleFactor * this.groundTruth.offsetY],
       size: [this.groundTruth.width * this.scaleFactor, this.groundTruth.height * this.scaleFactor],
       strokeColor: 'white',
       selected: true
     });
     let origBox = box.clone({ insert: false });
+    if (this.ps.tool) {
+      this.ps.tool.remove();
+    }
     let tool = new this.ps.Tool();
     let activeSegment: paper.Segment | null = null;
     tool.onMouseDown = (event: paper.MouseEvent) => {
@@ -189,6 +192,9 @@ export class OverlayRoot {
         let deflatedHomography = JSON.stringify(homography);
         fetch(this.baseUrl + '/overlay/homography', {
           method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: deflatedHomography
         });
     };
