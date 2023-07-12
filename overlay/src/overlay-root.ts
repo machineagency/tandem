@@ -208,13 +208,25 @@ export class OverlayRoot {
 
   generateCrosshair(mark: Mark): paper.Group {
     let vertical = new this.ps.Path.Line({
-      from: [mark.location.x, 0],
-      to: [mark.location.x, this.largeNumber],
+      from: [
+        this.scaleFactor * mark.location.x,
+        0
+      ],
+      to: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * this.largeNumber
+      ],
       strokeColor: 'red'
     });
     let horizontal = new this.ps.Path.Line({
-      from: [0, mark.location.y],
-      to: [this.largeNumber, mark.location.y],
+      from: [
+        0,
+        this.scaleFactor * mark.location.y
+      ],
+      to: [
+        this.scaleFactor * this.largeNumber,
+        this.scaleFactor * mark.location.y
+      ],
       strokeColor: 'red'
     });
     return new this.ps.Group({
