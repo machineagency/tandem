@@ -225,8 +225,14 @@ export class OverlayRoot {
 
   generateBox(mark: Mark): paper.Group {
     let box = new this.ps.Path.Rectangle({
-      point: [mark.location.x, mark.location.y],
-      size: [mark.dimensions.width, mark.dimensions.height],
+      point: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * mark.location.y
+      ],
+      size: [
+        this.scaleFactor * mark.dimensions.width,
+        this.scaleFactor * mark.dimensions.height
+      ],
       fillColor: 'red'
     });
     return new this.ps.Group({
