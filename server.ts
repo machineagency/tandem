@@ -118,7 +118,7 @@ app.put('/overlay/command', (req, res) => {
         });
     }
     else {
-        latestOverlayCommand = req.body;
+        latestOverlayCommand = cmd;
         res.status(200).send({
             message: 'Overlay command saved to server.'
         });
