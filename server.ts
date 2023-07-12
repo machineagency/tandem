@@ -317,15 +317,15 @@ app.put('/overlay/homography', (req, res) => {
         return maybeHomography.srcPts && maybeHomography.dstPts;
     };
     try {
-        let hRaw = req.body;
-        let deflatedHomography = JSON.parse(hRaw);
+        let deflatedHomography = req.body;
         if (!validateHomography(deflatedHomography)) {
             res.status(400).send({
                 message: 'Invalid homography: valid JSON, but not valid attributes.'
             })
         }
         else {
-            fs.writeFileSync('./tmp/homography.json', hRaw);
+            let serializedH = JSON.stringify(deflatedHomography);
+            fs.writeFileSync('./tmp/homography.json', serializedH);
             res.status(200).send({
                 message: 'Saved homography.'
             });
