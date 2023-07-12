@@ -16,20 +16,11 @@ interface Mark {
 }
 
 type StepStatus = 'standby' |'step' | 'calibration';
-type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'mutableBox'
+type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
                 | 'calibrationBox';
 
 // @customElement('overlay-root')
 export class OverlayRoot {
-  static I = [
-    1, 0, 0, 0, 1, 0, 0, 0, 1
-  ];
-  static UNIT_SQUARE_POINTS = [
-    0, 0,
-    1, 0,
-    1, 1,
-    0, 1
-  ];
   ps = new paper.PaperScope();
   largeNumber = 1000;
   baseUrl = 'http://localhost:3000';
@@ -141,8 +132,8 @@ export class OverlayRoot {
         break;
       case 'text':
         return this.generateText(mark);
-      case 'mutableBox':
-        break;
+      case 'svg':
+        return this.generateSvg(mark);
       case 'calibrationBox':
         return this.generateCalibrationBox();
     }
@@ -280,6 +271,13 @@ export class OverlayRoot {
       children: [text]
     });
   }
+
+  generateSvg(mark: Mark): paper.Group {
+    // TODO
+    mark;
+    return new this.ps.Group();
+  }
+
 }
 
 function main() {
