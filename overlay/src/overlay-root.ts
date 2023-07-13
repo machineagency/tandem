@@ -274,7 +274,14 @@ export class OverlayRoot {
 
   generateSvg(mark: Mark): paper.Group {
     // TODO
-    mark;
+    let svgTextRaw = mark.text;
+    if (!svgTextRaw) {
+      return new this.ps.Group([]);
+    }
+    let svgTextDecoded = decodeURIComponent(svgTextRaw);
+    this.ps.project.activeLayer.importSVG(svgTextDecoded, {
+      // ???
+    });
     return new this.ps.Group();
   }
 
