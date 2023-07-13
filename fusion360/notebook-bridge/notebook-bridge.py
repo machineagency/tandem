@@ -10,6 +10,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from .CreateUserParameter import *
+from .PropellerCAM import *
 from email.message import Message
 
 from typing import Optional
@@ -103,40 +104,41 @@ def request(
 class ThreadEventHandler(adsk.core.CustomEventHandler):
     def __init__(self):
         super().__init__()
+        self.content = {}
     def notify(self, args):
         try:
             # Make sure a command isn't running before changes are made.
             if ui.activeCommand != 'SelectCommand':
                 ui.commandDefinitions.itemById('SelectCommand').execute()
                 
-             # expected format
-             # {
-            #     "create_param": [
-            #         {
-            #             "name": "Length",
-            #             "value": 15.0,
-            #             "unit": "mm"
-            #         },
-            #         {
-            #             "name": "Width",
-            #             "value": 10.0,
-            #             "unit": "mm"
-            #         }
-            #     ],
-            #     "setup_cam": 
-            #      [
-            #         {"SpoilBoard": args},
-            #         { "FoamSurface": argss}
-            #     ]
-            # }
-                
             maybeResponse = request("http://localhost:3000/fusion360/poll")
             if maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
-                params = response_json.get('create_param')
-                if params:
-                    for param in params:
-                        create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
+                if self.content == response_json:
+                    pass
+                else:
+                    self.content = response_json
+                    params = response_json.get('create_param')
+                    cam_setup = response_json.get('setup_cam')
+                    
+                    cam = PropellerCAM()
+                    if params:
+                        for param in params:
+                            create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
+                    if cam_setup:
+                        for setup in cam_setup:
+                            if setup == "SpoilBoard":
+                                cam.create_spoil_board()
+                            elif setup == "FoamSurface":
+                                cam.create_foam_surface()
+                            elif setup == "FoamBore":
+                                cam.create_foam_bore()
+                            elif setup == "TopCut":
+                                cam.create_top_cut()
+                            elif setup == "BottomCut":
+                                cam.create_bottom_cut()
+                        
+                            
                 
 
         except:
@@ -148,7 +150,7 @@ class MyThread(threading.Thread):
     def __init__(self, event):
         threading.Thread.__init__(self)
         self.stopped = event
-        ui.messageBox('Thread created')
+        # ui.messageBox('Thread created')
 
     def run(self):
         ui.messageBox('Thread start')
