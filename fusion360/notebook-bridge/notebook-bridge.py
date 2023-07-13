@@ -108,8 +108,8 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
     def notify(self, args):
         try:
             # Make sure a command isn't running before changes are made.
-            if ui.activeCommand != 'SelectCommand':
-                ui.commandDefinitions.itemById('SelectCommand').execute()
+            # if ui.activeCommand != 'SelectCommand':
+            #     ui.commandDefinitions.itemById('SelectCommand').execute()
                 
             maybeResponse = request("http://localhost:3000/fusion360/poll")
             if maybeResponse.status == 200:  # Check if the request was successful
@@ -137,9 +137,6 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                                 cam.create_top_cut()
                             elif setup == "BottomCut":
                                 cam.create_bottom_cut()
-                        
-                            
-                
 
         except:
             if ui:
