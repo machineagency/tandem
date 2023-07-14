@@ -361,6 +361,24 @@ app.put('/fusion360/command', (req, res) => {
     })
 });
 
+app.get('/fusion360/get_svg', (req, res) => {
+    fs.readFile('./fusion360/SVGExport.svg', 'utf8', (err, data) => {
+      if (err) {
+        console.error(err);
+        if (err.code === 'ENOENT') {
+          // File not found, send 404
+          res.status(404).send('SVG file not found');
+        } else {
+          // Other error, send 500
+          res.status(500).send('Error reading SVG file');
+        }
+        return;
+      }
+      res.header('Content-Type', 'image/svg+xml');
+      res.send(data);
+    });
+  });
+
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
         NEEDS_REGENERATE = true;
