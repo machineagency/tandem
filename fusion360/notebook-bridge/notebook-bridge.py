@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.request
 from .CreateUserParameter import *
 from .PropellerCAM import *
+from . ExportSVG import *
 from email.message import Message
 
 from typing import Optional
@@ -120,6 +121,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                     self.content = response_json
                     params = response_json.get('create_param')
                     cam_setup = response_json.get('setup_cam')
+                    generate_svg = response_json.get('generate_svg')
                     
                     cam = PropellerCAM()
                     if params:
@@ -127,16 +129,18 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                             create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
                     if cam_setup:
                         for setup in cam_setup:
-                            if setup == "SpoilBoard":
-                                cam.create_spoil_board()
-                            elif setup == "FoamSurface":
+                            if setup == "alignmentJig":
+                                cam.create_alignmentJig()
+                            elif setup == "foamSurface":
                                 cam.create_foam_surface()
-                            elif setup == "FoamBore":
+                            elif setup == "foamBore":
                                 cam.create_foam_bore()
-                            elif setup == "TopCut":
+                            elif setup == "topCut":
                                 cam.create_top_cut()
-                            elif setup == "BottomCut":
+                            elif setup == "bottomCut":
                                 cam.create_bottom_cut()
+                    if generate_svg:
+                        exportSVG()
 
         except:
             if ui:
