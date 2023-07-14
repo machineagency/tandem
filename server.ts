@@ -349,7 +349,7 @@ app.get('/fusion360/poll', (req, res) => {
     }
     else {
         res.status(200).send(latestCommand);
-        //latestCommand = null;
+        latestCommand = null;
     }
 });
 

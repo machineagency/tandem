@@ -113,7 +113,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
             #     ui.commandDefinitions.itemById('SelectCommand').execute()
                 
             maybeResponse = request("http://localhost:3000/fusion360/poll")
-            if maybeResponse.status == 200:  # Check if the request was successful
+            if maybeResponse and maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
                 if self.content == response_json:
                     pass
