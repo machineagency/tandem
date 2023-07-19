@@ -301,7 +301,11 @@ export class OverlayRoot {
     }
     let svgTextDecoded = decodeURIComponent(svgTextRaw);
     this.ps.project.activeLayer.importSVG(svgTextDecoded, {
-      // ???
+      onLoad: (item: paper.Item, _: string) => {
+        // FIXME: this is not ending up in the correct position
+        item.position.x = (mark.location.x * this.scaleFactor) + (item.bounds.width / 2);
+        item.position.y = (mark.location.y * this.scaleFactor) + (item.bounds.height / 2);
+      }
     });
     return new this.ps.Group();
   }
