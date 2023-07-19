@@ -7,10 +7,16 @@ interface Step {
   marks: Mark[];
 }
 
+// FIXME: add subtypes for Mark since we don't have all fields for all marks.
+// Currently this is not type safe because we could have undefined values after parsing.
 interface Mark {
   type: MarkType;
   location: { x: number, y: number };
-  dimensions: { width: number, height: number };
+  dimensions: {
+    width: number,
+    height: number,
+    radius: number
+  };
   text: string;
   innerPath: paper.Path;
 }
@@ -129,7 +135,7 @@ export class OverlayRoot {
       case 'box':
         return this.generateBox(mark);
       case 'circle':
-        break;
+        return this.generateCircle(mark);
       case 'text':
         return this.generateText(mark);
       case 'svg':
@@ -232,6 +238,21 @@ export class OverlayRoot {
     return new this.ps.Group({
       name: 'crosshair',
       children: [vertical, horizontal]
+    });
+  }
+
+  generateCircle(mark: Mark): paper.Group {
+    let circle = new this.ps.Path.Circle({
+      center: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * mark.location.y
+      ],
+      radius: this.scaleFactor * mark.dimensions.radius,
+      fillColor: 'red'
+    });
+    return new this.ps.Group({
+      name: 'circle',
+      children: [circle]
     });
   }
 
