@@ -18,10 +18,12 @@
     "multer": "^1.4.5-lts.1",
     "node-fetch": "2.6.7",
     "paper": "^0.12.17",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.13",
+    "@types/ws": "^8.5.5",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.1"
   }

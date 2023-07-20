@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import * as cors from 'cors';
 import * as fs from 'fs';
 import { exec } from 'child_process'
+import { WebSocket } from 'ws';
 
 import { read, plot, renderLayers, renderBoard, stringifySvg } from '@tracespace/core'
 import * as paper from 'paper'
@@ -58,38 +59,31 @@ let LATEST_REGENERATE_TIME = Date.now();
 let NEEDS_REGENERATE = false;
 let latestOverlayCommand: OverlayCommand | null = null;
 
-let sampleOverlayCommand = {
-    name: 'todo',
-    type: 'calibration',
-    marks: [
-        {
-            type: 'crosshair',
-            location: {
-                x: 120,
-                y: 130
-            }
-        },
-        {
-            type: 'text',
-            location: {
-                x: 100,
-                y: 100
-            },
-            text: 'hello'
-        },
-        {
-            type: 'box',
-            location: {
-                x: 200,
-                y: 250
-            },
-            dimensions: {
-                width: 100,
-                height: 75
-            }
+function generateShopbotSocket() {
+    const url = "wss://machineagency-shopbot-server.herokuapp.com";
+    const protocol = "drawing";
+    return new Promise<WebSocket>((resolve, reject) => {
+      let socket = new WebSocket(url, protocol);
+      socket.on("close", (event) => {
+        console.log("Shopbot Socket Opened.")
+      });
+      socket.on("message", (data) => {
+        let latestMessage = JSON.parse(data.toString());
+        if (latestMessage.type === "connectionStatus") {
         }
-    ]
-};
+      });
+      socket.on("open", () => {
+        console.log("Shopbot Socket Opened.")
+        resolve(socket);
+      });
+      socket.on("error", (error) => {
+        reject(error);
+      });
+    });
+  }
+
+let socket;
+generateShopbotSocket().then(s => socket = s); 
 
 app.get('/overlay/poll', (req, res) => {
     if (!latestOverlayCommand) {
@@ -341,7 +335,6 @@ app.put('/overlay/homography', (req, res) => {
 let latestCommand: any = null;
 
 app.get('/fusion360/poll', (req, res) => {
-    console.log(latestCommand);
     if (!latestCommand) {
         res.status(200).send({
             status: 'standby',
@@ -355,7 +348,6 @@ app.get('/fusion360/poll', (req, res) => {
 
 app.put('/fusion360/command', (req, res) => {
     latestCommand = req.body;
-    console.log(latestCommand);
     res.status(200).send({
         message: "Saved the command."
     })
