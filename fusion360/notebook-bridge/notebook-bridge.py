@@ -12,6 +12,7 @@ import urllib.request
 from .CreateUserParameter import *
 from .PropellerCAM import *
 from . ExportSVG import *
+from . PostProcess import *
 from email.message import Message
 
 from typing import Optional
@@ -108,43 +109,55 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
         self.content = {}
     def notify(self, args):
         try:
-            # Make sure a command isn't running before changes are made.
-            # if ui.activeCommand != 'SelectCommand':
-            #     ui.commandDefinitions.itemById('SelectCommand').execute()
-                
+            exportSBPWithSetupNamed("topCut")
             maybeResponse = request("http://localhost:3000/fusion360/poll")
             if maybeResponse and maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
-                if self.content == response_json:
-                    pass
-                else:
-                    self.content = response_json
-                    params = response_json.get('create_param')
-                    cam_setup = response_json.get('setup_cam')
-                    generate_svg = response_json.get('generate_svg')
+                new_status = response_json.get('status')
+                new_params = response_json.get('create_param')
+                new_cam_setup = response_json.get('setup_cam')
+                new_generate_svg = response_json.get('generate_svg')
+
+                
+
+                if(new_status != 'standby'):
+                    # Check if 'create_param' is the same, if not, update and execute.
+                    if self.content.get('create_param') != new_params:
+                        self.content['create_param'] = new_params
+                        if new_params:
+                            for param in new_params:
+                                create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
+
+                    # Check if 'setup_cam' is the same, if not, update and execute.
+                    if self.content.get('setup_cam') != new_cam_setup:
+                        cam = PropellerCAM()
+                        self.content['setup_cam'] = new_cam_setup
+                        if new_cam_setup:
+                            for setup in new_cam_setup:
+                                if setup == "alignmentJig":
+                                    cam.create_alignmentJig()
+                                elif setup == "foamSurface":
+                                    cam.create_foam_surface()
+                                elif setup == "foamBore":
+                                    cam.create_foam_bore()
+                                elif setup == "topCut":
+                                    cam.create_top_cut()
+                                elif setup == "bottomCut":
+                                    cam.create_bottom_cut()
+
+                    # Check if 'generate_svg' is the same, if not, update and execute.
+                    if self.content.get('generate_svg') != new_generate_svg:
+                        self.content['generate_svg'] = new_generate_svg
+                        if new_generate_svg:
+                            exportSVG()
                     
-                    cam = PropellerCAM()
-                    if params:
-                        for param in params:
-                            create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
-                    if cam_setup:
-                        for setup in cam_setup:
-                            if setup == "alignmentJig":
-                                cam.create_alignmentJig()
-                            elif setup == "foamSurface":
-                                cam.create_foam_surface()
-                            elif setup == "foamBore":
-                                cam.create_foam_bore()
-                            elif setup == "topCut":
-                                cam.create_top_cut()
-                            elif setup == "bottomCut":
-                                cam.create_bottom_cut()
-                    if generate_svg:
-                        exportSVG()
+                else:
+                    self.content = {}
 
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
 
 # The class for the new thread.
 class MyThread(threading.Thread):
