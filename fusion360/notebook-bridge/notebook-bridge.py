@@ -109,7 +109,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
         self.content = {}
     def notify(self, args):
         try:
-            exportSBPWithSetupNamed("topCut")
+            
             maybeResponse = request("http://localhost:3000/fusion360/poll")
             if maybeResponse and maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
@@ -117,6 +117,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                 new_params = response_json.get('create_param')
                 new_cam_setup = response_json.get('setup_cam')
                 new_generate_svg = response_json.get('generate_svg')
+                new_export_sbp = response_json.get('new_export_sbp')
 
                 
 
@@ -150,7 +151,12 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                         self.content['generate_svg'] = new_generate_svg
                         if new_generate_svg:
                             exportSVG()
-                    
+                            
+                    if self.content.get('export_sbp') != new_export_sbp:
+                        self.content['new_export_sbp'] = new_export_sbp
+                        if new_export_sbp:
+                            for setupName in new_export_sbp:
+                                exportSBPWithSetupNamed(setupName)
                 else:
                     self.content = {}
 
