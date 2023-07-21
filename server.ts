@@ -388,7 +388,48 @@ app.get('/fusion360/get_svg', (req, res) => {
       res.header('Content-Type', 'image/svg+xml');
       res.send(data);
     });
-  });
+});
+
+app.get('/mill/state', (req, res) => {
+    if (!latestMillState) {
+        res.status(500).send({
+            message: 'No mill state.'
+        });
+    }
+    else {
+        // TODO: explicitly prompt the shopbot server for fresh state,
+        // rather than relying on the last retrieved state.
+        res.status(500).send(latestMillState);
+    }
+});
+
+app.post('/mill/instructions', (req, res) => {
+    let insts = req.body.instructions;
+    console.log(insts);
+    if (!insts) {
+        res.status(400).send({
+            message: 'Invalid instruction format.'
+        });
+    }
+    else {
+        if (!socket || socket.readyState !== socket.OPEN) {
+            res.status(500).send({
+                message: 'Cannot talk to the mill because the socket is not open.'
+            });
+        }
+        else {
+            console.log('here');
+            let message = {
+                type: 'gcode',
+                data: insts
+            };
+            socket.send(JSON.stringify(message));
+            res.status(200).send({
+                message: 'Sent instructions to the mill.'
+            });
+        }
+    }
+});
 
 function watchKicadPcbFile(filepath: Filepath) {
     fs.watchFile(filepath, (curr, prev) => {
