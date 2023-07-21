@@ -14,6 +14,7 @@ def run(context):
         width = design.userParameters.itemByName("boxWidth").value
         height = design.userParameters.itemByName('boxHeight').value
         dowelDiam = design.userParameters.itemByName('dowelDiam')
+        zDistance = design.userParameters.itemByName('propellerHeight')
         offset = 1.8
         
         # sketches = rootComp.sketches
@@ -31,7 +32,7 @@ def run(context):
         # Define that the extent input.
         extrudes = activeSelection.rootComponent.features.extrudeFeatures
         prof = sketch.profiles.item(0)
-        zDistance = design.userParameters.itemByName('PropellerHeight')
+        
         zDistanceValueInput = adsk.core.ValueInput.createByString(zDistance.expression)
         
         
@@ -40,7 +41,7 @@ def run(context):
 
         # Create the extrusion.
         ext = extrudes.add(extInput)
-        ext.bodies.item(0).name = "outer"
+        ext.bodies.item(0).name = "outer-SPOIL"
         
         # Get the end face of the extrusion
         endFaces = ext.endFaces

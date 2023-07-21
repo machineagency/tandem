@@ -3,6 +3,8 @@
 import adsk.core, adsk.fusion, traceback
 
 
+
+
 class PropellerCAM:
 
     def __init__(self):
@@ -82,6 +84,13 @@ class PropellerCAM:
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param = setupInput.parameters
                 # set offset mode
+
+                jigStock-x
+                jigStock-y
+                jigStock-z
+                
+
+                
                 param.itemByName('job_stockFixedX').expression = '10.5 in'
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
 
@@ -138,6 +147,10 @@ class PropellerCAM:
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
+
+                mainStock-x
+                mainStock-y
+                mainStock-z
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 
@@ -198,11 +211,17 @@ class PropellerCAM:
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
+
+
+                # mainStock-x
+                # mainStock-y
+                #properllerHeight
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 param.itemByName('job_stockFixedX').expression = '10 in'
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
                 param.itemByName('job_stockFixedY').expression = "8 in"
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
+                #properllerHeight
                 param.itemByName('job_stockFixedZ').expression = '1.26 in'
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
@@ -301,7 +320,7 @@ class PropellerCAM:
                 # create a list for the models to add to the setup Input
                 models = []
                 
-                flipped = recursivelyFindOccurences(cam.designRootOccurrence, "flipped:1")
+                flipped = recursivelyFindOccurences(cam.designRootOccurrence, "top-down:1")
                 for bodies in flipped.bRepBodies:
                     models.append(bodies)
                     
