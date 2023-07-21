@@ -61,6 +61,16 @@ let LATEST_REGENERATE_TIME = Date.now();
 let NEEDS_REGENERATE = false;
 let latestOverlayCommand: OverlayCommand | null = null;
 
+interface MillState {
+    type: 'fabricatorData';
+    x: number;
+    y: number;
+    z: number;
+    status: number;
+    timestampe: string;
+};
+let latestMillState: MillState | null = null;
+
 function generateShopbotSocket() {
     const url = "wss://machineagency-shopbot-server.herokuapp.com";
     const protocol = "drawing";
@@ -70,8 +80,15 @@ function generateShopbotSocket() {
         console.log("Shopbot Socket Opened.")
       });
       socket.on("message", (data) => {
-        let latestMessage = JSON.parse(data.toString());
-        if (latestMessage.type === "connectionStatus") {
+        let receivedString = data.toString();
+        try {
+            let parsedMessage = JSON.parse(receivedString);
+            if (parsedMessage['type'] === 'fabricatorData') {
+                latestMillState = parsedMessage;
+            }
+        }
+        catch {
+
         }
       });
       socket.on("open", () => {
@@ -84,7 +101,7 @@ function generateShopbotSocket() {
     });
   }
 
-let socket;
+let socket: WebSocket | null = null;
 generateShopbotSocket().then(s => socket = s); 
 
 app.get('/overlay/poll', (req, res) => {
