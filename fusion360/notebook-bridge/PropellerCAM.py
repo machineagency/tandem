@@ -1,6 +1,6 @@
 # adsk_helpers.py
 
-import adsk.core, adsk.fusion, traceback
+import adsk.core, adsk.fusion, adsk.cam, traceback
 
 
 
@@ -9,13 +9,13 @@ class PropellerCAM:
 
     def __init__(self):
         app = adsk.core.Application.get()
-        ui = app.userInterface
+        self.ui = app.userInterface
 
         # use existing document, load 2D Strategies model from the Fusion CAM Samples folder
         doc = app.activeDocument
 
         # switch to manufacturing space
-        camWS = ui.workspaces.itemById('CAMEnvironment')
+        camWS = self.ui.workspaces.itemById('CAMEnvironment')
         camWS.activate()
 
         # get the CAM product
@@ -44,6 +44,8 @@ class PropellerCAM:
         self.adaptiveTool = None
         self.boreTool = None
         self.bore2Tool = None
+
+        
 
         # searching the face mill and the bull nose using a loop for the roughing operations
         for tool in toolLibrary:
@@ -85,11 +87,9 @@ class PropellerCAM:
                 param = setupInput.parameters
                 # set offset mode
 
-                jigStock-x
-                jigStock-y
-                jigStock-z
-                
-
+                # jigStock-x
+                # jigStock-y
+                # jigStock-z
                 
                 param.itemByName('job_stockFixedX').expression = '10.5 in'
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
@@ -148,9 +148,6 @@ class PropellerCAM:
                 param = setup.parameters
                 # set offset mode
 
-                mainStock-x
-                mainStock-y
-                mainStock-z
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 
@@ -250,6 +247,7 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
+            
             setup = getSetup('topCut', setups)
             if setup == None:
                 #################### create setup TopCut ####################
@@ -260,9 +258,12 @@ class PropellerCAM:
                 # create a list for the models to add to the setup Input
                 models = []
                 # find the component occurrence called top-down
-                top_down = recursivelyFindOccurences(cam.designRootOccurrence, "top-down:1")
-                for bodies in top_down.bRepBodies:
-                    models.append(bodies)
+                top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "top-down:1")
+                if(top_down.objectType == "adsk::fusion::BRepBody"):
+                    models.append(top_down)
+                elif(top_down.objectType == "adsk::fusion::Occurrence"):
+                    for bodies in top_down.bRepBodies:
+                        models.append(bodies)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
@@ -320,9 +321,12 @@ class PropellerCAM:
                 # create a list for the models to add to the setup Input
                 models = []
                 
-                flipped = recursivelyFindOccurences(cam.designRootOccurrence, "top-down:1")
-                for bodies in flipped.bRepBodies:
-                    models.append(bodies)
+                flipped_top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "top-down:1")
+                if(flipped_top_down.objectType == "adsk::fusion::BRepBody"):
+                    models.append(flipped_top_down)
+                elif(flipped_top_down.objectType == "adsk::fusion::Occurrence"):
+                    for bodies in flipped_top_down.bRepBodies:
+                        models.append(bodies)
                     
                 # for i in range(cam.designRootOccurrence.component.allOccurrences.item(1).bRepBodies.count):
                 #     # ui.messageBox(cam.designRootOccurrence.component.allOccurrences.item(1).bRepBodies.item(i).name)
@@ -398,6 +402,9 @@ def recursivelyFindbRepBodies(currentOccurence, name):
     bRepBodies = currentOccurence.bRepBodies
     childOccurrences = currentOccurence.childOccurrences
 
+    if currentOccurence.name == name:
+        return currentOccurence
+
     if bRepBodies and bRepBodies.count > 0:
         for i in range(bRepBodies.count):
             if bRepBodies.item(i).name == name:
@@ -413,7 +420,6 @@ def recursivelyFindbRepBodies(currentOccurence, name):
 
 def recursivelyFindOccurences(currentOccurence, name):
     childOccurrences = currentOccurence.childOccurrences
-
     if currentOccurence.name == name:
         return currentOccurence
 

@@ -117,7 +117,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                 new_params = response_json.get('create_param')
                 new_cam_setup = response_json.get('setup_cam')
                 new_generate_svg = response_json.get('generate_svg')
-                new_export_sbp = response_json.get('new_export_sbp')
+                new_export_sbp = response_json.get('export_sbp')
 
                 
 
