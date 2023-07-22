@@ -16,3 +16,6 @@ default/
 !default/*.kicad_sch
 
 overlay/public/latest-svg.svg
+
+fusion360/*.svg
+fusion360/*.sbp
