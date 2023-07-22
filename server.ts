@@ -352,6 +352,7 @@ app.put('/overlay/homography', (req, res) => {
 });
 
 let latestCommand: any = null;
+let latestSbp: string | null = null;
 
 app.get('/fusion360/poll', (req, res) => {
     if (!latestCommand) {
@@ -370,6 +371,21 @@ app.put('/fusion360/command', (req, res) => {
     res.status(200).send({
         message: "Saved the command."
     })
+});
+
+app.get('/fusion360/sbp/:filename', (req, res) => {
+    let maybeSbpFile = fs.readFileSync(`./fusion360/${req.params.filename}.sbp`);
+    if (maybeSbpFile) {
+        let instructions = maybeSbpFile.toString().split('\r\n');
+        res.status(200).send({
+            instructions
+        });
+    }
+    else {
+        res.status(500).send({
+            message: `Could not find an SBP file with the name ${maybeSbpFile}`
+        })
+    }
 });
 
 app.get('/fusion360/get_svg', (req, res) => {
@@ -405,7 +421,6 @@ app.get('/mill/state', (req, res) => {
 
 app.post('/mill/instructions', (req, res) => {
     let insts = req.body.instructions;
-    console.log(insts);
     if (!insts) {
         res.status(400).send({
             message: 'Invalid instruction format.'
@@ -418,7 +433,6 @@ app.post('/mill/instructions', (req, res) => {
             });
         }
         else {
-            console.log('here');
             let message = {
                 type: 'gcode',
                 data: insts
