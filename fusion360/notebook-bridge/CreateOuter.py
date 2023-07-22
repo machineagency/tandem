@@ -2,8 +2,7 @@ import adsk.core, adsk.fusion, traceback
 
 
 
-def run(context):
-    ui = None
+def createOuter():
     try:
         # Initialize the user interface.
         app = adsk.core.Application.get()
@@ -44,14 +43,35 @@ def run(context):
         ext.bodies.item(0).name = "outer-SPOIL"
         
         # Get the end face of the extrusion
-        endFaces = ext.endFaces
-        endFace = endFaces.item(0)
+        endFace = ext.endFaces.item(0)
+        startFace = ext.startFaces.item(0)
 
+    
+        return startFace, endFace
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+def holeDrill(holeDrillingFace):
+    try:
+        app = adsk.core.Application.get()
+        ui = app.userInterface
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        activeSelection = adsk.fusion.Design.cast(design)
         # Create a construction plane by offsetting the end face
+
+        width = design.userParameters.itemByName("boxWidth").value
+        height = design.userParameters.itemByName('boxHeight').value
+        dowelDiam = design.userParameters.itemByName('dowelDiam')
+        zDistance = design.userParameters.itemByName('propellerHeight')
+        offset = 1.8
+        zDistanceValueInput = adsk.core.ValueInput.createByString(zDistance.expression)
+
         planes = activeSelection.rootComponent.constructionPlanes
         planeInput = planes.createInput()
         offsetVal = adsk.core.ValueInput.createByString('0 cm')
-        planeInput.setByOffset(endFace, offsetVal)
+        planeInput.setByOffset(holeDrillingFace, offsetVal)
         offsetPlane = planes.add(planeInput)
 
         # Create a sketch on the new construction plane and add four sketch points on it
@@ -76,7 +96,7 @@ def run(context):
         holeInput.setDistanceExtent(zDistanceValueInput)
         
         hole = holes.add(holeInput)
-
+        return hole.faces
     except:
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))

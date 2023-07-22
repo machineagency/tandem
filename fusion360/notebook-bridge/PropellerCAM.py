@@ -8,11 +8,21 @@ import adsk.core, adsk.fusion, adsk.cam, traceback
 class PropellerCAM:
 
     def __init__(self):
-        app = adsk.core.Application.get()
-        self.ui = app.userInterface
-
+        self.app = adsk.core.Application.get()
+        self.ui = self.app.userInterface
         # use existing document, load 2D Strategies model from the Fusion CAM Samples folder
-        doc = app.activeDocument
+        doc = self.app.activeDocument
+        designWS = self.ui.workspaces.itemById('FusionSolidEnvironment')
+        designWS.activate()
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+
+        self.jigStock_x = design.userParameters.itemByName("jigStock_x").expression
+        self.jigStock_y = design.userParameters.itemByName("jigStock_y").expression
+        self.jigStock_z = design.userParameters.itemByName("jigStock_z").expression
+        self.mainStock_x = design.userParameters.itemByName("mainStock_x").expression
+        self.mainStock_y = design.userParameters.itemByName("mainStock_y").expression
+        self.mainStock_z = design.userParameters.itemByName("mainStock_z").expression
+        self.propellerHeight = design.userParameters.itemByName("propellerHeight").expression
 
         # switch to manufacturing space
         camWS = self.ui.workspaces.itemById('CAMEnvironment')
@@ -64,9 +74,7 @@ class PropellerCAM:
                 break
 
     
-    def create_alignmentJig(self):
-        #################### create setup Spoilboard ####################
-        # cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
+    def create_alignmentJig(self, holeFaces = None):
         
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
@@ -86,18 +94,14 @@ class PropellerCAM:
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param = setupInput.parameters
                 # set offset mode
-
-                # jigStock-x
-                # jigStock-y
-                # jigStock-z
                 
-                param.itemByName('job_stockFixedX').expression = '10.5 in'
+                param.itemByName('job_stockFixedX').expression = self.jigStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedY').expression = "10.5 in"
+                param.itemByName('job_stockFixedY').expression = self.jigStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedZ').expression = '1.5 in'
+                param.itemByName('job_stockFixedZ').expression = self.jigStock_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
@@ -107,17 +111,45 @@ class PropellerCAM:
                 setup = setups.add(setupInput)
 
                 #################### bore operation ####################
+
+                # input = setup.operations.createInput('bore')
+                # input.tool = self.boreTool
+                # input.displayName = 'Face1'
+                # for i in range(self.faceTool.presets.count):
+                #     if str(self.boreTool.presets.item(i).name) == "omsrud_face":
+                #         input.toolPreset = self.boreTool.presets.item(i)
+
+                # input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+                # input.parameters.itemByName('tool_spindleSpeed').expression = "3055.775 rpm"
+                # input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
+                # input.parameters.itemByName('tool_feedCutting').expression = "122.2 in/min"
+                # input.parameters.itemByName('bottomHeight_mode').expression = "'from surface top'"
                 input = setup.operations.createInput('bore')
                 input.tool = self.boreTool
                 input.displayName = 'Bore1'
+
+                
                 for i in range(self.boreTool.presets.count):
                     if str(self.boreTool.presets.item(i).name) == "Wood":
                         input.toolPreset = self.boreTool.presets.item(i)
+                        break
+        
                 input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+                
+                if holeFaces is not None:
+                    faces = []
+                    for i in range(holeFaces.count):
+                        faces.append(holeFaces.item(i))
+
+                    modelParam = input.parameters.itemByName('circularFaces')
+                    geomSelect: adsk.cam.GeometrySelection = modelParam.value
+                    geomSelect.value = faces
 
                 # add the operation to the setup
                 boreOp = setup.operations.add(input)
                 cam.generateToolpath(boreOp)
+                # faceOp = setup.operations.add(input)
+                # cam.generateToolpath(faceOp)
  
         except:
             pass
@@ -127,12 +159,10 @@ class PropellerCAM:
         #################### create setup FoamSurface ####################
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
+            
             setups = cam.setups
             setup = getSetup('foamSurface', setups)
             if setup == None:
-                #################### create setup foamSurface ####################
-                cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
-                setups = cam.setups
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
@@ -151,13 +181,11 @@ class PropellerCAM:
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 
-                param.itemByName('job_stockFixedX').expression = '10 in'
+                param.itemByName('job_stockFixedX').expression = self.mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-
-                param.itemByName('job_stockFixedY').expression = "8 in"
+                param.itemByName('job_stockFixedY').expression = self.mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-
-                param.itemByName('job_stockFixedZ').expression = '2 in'
+                param.itemByName('job_stockFixedZ').expression = self.mainStock_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
@@ -184,7 +212,7 @@ class PropellerCAM:
         except:
             pass
             
-    def create_foam_bore(self):
+    def create_foam_bore(self, holeFaces=None):
         
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
@@ -192,8 +220,6 @@ class PropellerCAM:
             setup = getSetup('foamBore', setups)
             if setup == None:
                 #################### create setup foamBore ####################
-                cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
-                setups = cam.setups
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
@@ -210,16 +236,14 @@ class PropellerCAM:
                 # set offset mode
 
 
-                # mainStock-x
-                # mainStock-y
+
                 #properllerHeight
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = '10 in'
+                param.itemByName('job_stockFixedX').expression = self.mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = "8 in"
+                param.itemByName('job_stockFixedY').expression = self.mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                #properllerHeight
-                param.itemByName('job_stockFixedZ').expression = '1.26 in'
+        
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
 
@@ -235,6 +259,15 @@ class PropellerCAM:
                 input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
                 input.parameters.itemByName('tool_feedCutting').expression = "397.251 in/min"
 
+                if holeFaces is not None:
+                    faces = []
+                    for i in range(holeFaces.count):
+                        faces.append(holeFaces.item(i))
+
+                    modelParam = input.parameters.itemByName('circularFaces')
+                    geomSelect: adsk.cam.GeometrySelection = modelParam.value
+                    geomSelect.value = faces
+
 
                 # add the operation to the setup
                 bore2Op = setup.operations.add(input)
@@ -243,16 +276,13 @@ class PropellerCAM:
         except:
             pass
     
-    def create_top_cut(self):
+    def create_top_cut(self, innerTopEdges):
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
             
             setup = getSetup('topCut', setups)
             if setup == None:
-                #################### create setup TopCut ####################
-                cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
-                setups = cam.setups
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
@@ -271,13 +301,16 @@ class PropellerCAM:
                 
                 setup = setups.add(setupInput)
                 param = setup.parameters
+
+        
+        
                 # set offset mode
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = '10 in'
+                param.itemByName('job_stockFixedX').expression = self.mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = "8 in"
+                param.itemByName('job_stockFixedY').expression = self.mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = '1.26 in'
+                param.itemByName('job_stockFixedZ').expression = self.propellerHeight
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
         
@@ -301,14 +334,38 @@ class PropellerCAM:
                 input.parameters.itemByName('optimalLoad').expression = "0.2 in"
                 input.parameters.itemByName('rampType').expression = "'plunge'"
 
+                if innerTopEdges is not None:
+                    edgeList = [e for e in innerTopEdges]
+
+                    cadcontours2dParam: adsk.cam.CadContours2dParameterValue = input.parameters.itemByName('stockContours').value
+                    # Get the CurveSelections object from the CAD contour. This
+                    # object manages the list of contour selections.
+                    curveSelections = cadcontours2dParam.getCurveSelections()
+
+                    # Get the edges from the loop and add them to a list.
+                    outerEdges = [e for e in innerTopEdges]
+
+                    # Create a new chain selection.
+                    chainSel: adsk.cam.ChainSelection = curveSelections.createNewChainSelection()
+
+                    # Set some properties of the chain.
+                    chainSel.isOpen = False
+                    chainSel.isReverted = False
+
+                    # Add the geometry to the chain.
+                    chainSel.inputGeometry = outerEdges
+
+                    # Apply the curve selection back to the parameter.
+                    cadcontours2dParam.applyCurveSelections(curveSelections)
+
                 # add the operation to the setup
-                bore2Op = setup.operations.add(input)
-                cam.generateToolpath(bore2Op)
+                AdaptiveOp = setup.operations.add(input)
+                cam.generateToolpath(AdaptiveOp)
             
         except:
             pass
     
-    def create_bottom_cut(self):
+    def create_bottom_cut(self, innerBottomEdges):
         
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
@@ -328,25 +385,22 @@ class PropellerCAM:
                     for bodies in flipped_top_down.bRepBodies:
                         models.append(bodies)
                     
-                # for i in range(cam.designRootOccurrence.component.allOccurrences.item(1).bRepBodies.count):
-                #     # ui.messageBox(cam.designRootOccurrence.component.allOccurrences.item(1).bRepBodies.item(i).name)
-                #     part = cam.designRootOccurrence.component.allOccurrences.item(1).bRepBodies.item(i)
-                #     models.append(part)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
                 setupInput.name = 'bottomCut'
-                
                 setup = setups.add(setupInput)
                 param = setup.parameters
                     
                 # set offset mode
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = '5.0688 in'
+                param.itemByName('job_stockFixedX').expression = self.mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = "4.78587 in"
+                param.itemByName('job_stockFixedY').expression = self.mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = '1.25984 in'
+
+                param.itemByName('job_stockFixedZ').expression = self.propellerHeight
+
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
                 param.itemByName('wcs_orientation_mode').expression = "'axesZY'"
@@ -372,6 +426,32 @@ class PropellerCAM:
                 input.parameters.itemByName('minimumStepdown').expression = "0.01 in"
                 input.parameters.itemByName('optimalLoad').expression = "0.2 in"
                 input.parameters.itemByName('rampType').expression = "'plunge'"
+
+
+                if innerBottomEdges is not None:
+                    edgeList = [e for e in innerBottomEdges]
+
+                    cadcontours2dParam: adsk.cam.CadContours2dParameterValue = input.parameters.itemByName('stockContours').value
+                    # Get the CurveSelections object from the CAD contour. This
+                    # object manages the list of contour selections.
+                    curveSelections = cadcontours2dParam.getCurveSelections()
+
+                    # Get the edges from the loop and add them to a list.
+                    outerEdges = [e for e in innerBottomEdges]
+
+                    # Create a new chain selection.
+                    chainSel: adsk.cam.ChainSelection = curveSelections.createNewChainSelection()
+
+                    # Set some properties of the chain.
+                    chainSel.isOpen = False
+                    chainSel.isReverted = False
+
+                    # Add the geometry to the chain.
+                    chainSel.inputGeometry = outerEdges
+
+                    # Apply the curve selection back to the parameter.
+                    cadcontours2dParam.applyCurveSelections(curveSelections)
+
 
                 # add the operation to the setup
                 bore2Op = setup.operations.add(input)
