@@ -374,17 +374,19 @@ app.put('/fusion360/command', (req, res) => {
 });
 
 app.get('/fusion360/sbp/:filename', (req, res) => {
-    let maybeSbpFile = fs.readFileSync(`./fusion360/${req.params.filename}.sbp`);
-    if (maybeSbpFile) {
-        let instructions = maybeSbpFile.toString().split('\r\n');
-        res.status(200).send({
-            instructions
-        });
+    try {
+        let sbpFile = fs.readFileSync(`./fusion360/${req.params.filename}.sbp`);
+        if (sbpFile) {
+            let instructions = sbpFile.toString().split('\r\n');
+            res.status(200).send({
+                instructions
+            });
+        }
     }
-    else {
+    catch {
         res.status(500).send({
-            message: `Could not find an SBP file with the name ${maybeSbpFile}`
-        })
+            message: `Could not find an SBP file with the name ${req.params.filename}.sbp.`
+        }) 
     }
 });
 
