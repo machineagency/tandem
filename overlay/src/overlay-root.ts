@@ -7,23 +7,58 @@ interface Step {
   marks: Mark[];
 }
 
-// FIXME: add subtypes for Mark since we don't have all fields for all marks.
-// Currently this is not type safe because we could have undefined values after parsing.
 interface Mark {
   type: MarkType;
   location: { x: number, y: number };
-  dimensions: {
-    width: number,
-    height: number,
-    radius: number
-  };
+}
+
+// TODO: change to single quotes
+interface Arrow extends Mark {
+  width: number;
+  height: number;
+  type: "arrow";
+}
+
+interface Crosshair extends Mark {
+  type: "crosshair";
+}
+
+interface Box extends Mark {
+  width: number;
+  height: number;
+  type: "box";
+}
+
+interface Circle extends Mark {
+  radius: number;
+  type: "circle";
+}
+
+interface Text extends Mark {
   text: string;
-  innerPath: paper.Path;
+  type: "text";
+}
+
+interface SVG extends Mark {
+  text: string;
+  type: "svg";
+}
+
+interface CalibrationBox extends Mark {
+  //type: "calibrationBox";
+}
+
+interface Toolpath extends Mark {
+  tssName: TSSName;
+  // TODO: figure out how to represent instructions
+  instructions: string[];
+  type: "toolpath";
 }
 
 type StepStatus = 'standby' |'step' | 'calibration';
 type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox';
+                | 'calibrationBox' | 'toolpath';
+type TSSName = 'basic' | 'depthMap' | 'boundingBox';
 
 // @customElement('overlay-root')
 export class OverlayRoot {
@@ -129,23 +164,58 @@ export class OverlayRoot {
   compileMark(mark: Mark): paper.Group {
     switch (mark.type) {
       case 'arrow':
+        // TODO
         break;
       case 'crosshair':
-        return this.generateCrosshair(mark);
+        return this.generateCrosshair(mark as Crosshair);
       case 'box':
-        return this.generateBox(mark);
+        return this.generateBox(mark as Box);
       case 'circle':
-        return this.generateCircle(mark);
+        return this.generateCircle(mark as Circle);
       case 'text':
-        return this.generateText(mark);
+        return this.generateText(mark as Text);
       case 'svg':
-        return this.generateSvg(mark);
+        return this.generateSvg(mark as SVG);
       case 'calibrationBox':
         return this.generateCalibrationBox();
+      case 'toolpath':
+        return this.generateToolpathVisualization(mark as Toolpath);
     }
     return new paper.Group();
   }
 
+  // Generates the different toolpath visualizations
+  generateToolpathVisualization(toolpath: Toolpath): paper.Group {
+    switch (toolpath.tssName) {
+      case 'basic':
+        // TODO
+        return this.basicVis();
+      case 'depthMap':
+        // TODO
+        return this.depthMapVis();
+      case 'boundingBox':
+        // TODO
+        return this.boundingBoxVis();
+    }
+    return new this.ps.Group();
+  }  
+
+  basicVis(): paper.Group {
+    console.log("basicVis called");
+    return new this.ps.Group();
+  }
+
+  depthMapVis(): paper.Group {
+    console.log("depthMapVis called");
+    return new this.ps.Group();
+  }
+
+  boundingBoxVis(): paper.Group {
+    console.log("boundingBoxVis called");
+    return new this.ps.Group();
+  }
+
+  // Calculates homography for the projection 
   generateCalibrationBox(): paper.Group {
     let box = new this.ps.Path.Rectangle({
       point: [
@@ -212,7 +282,7 @@ export class OverlayRoot {
     });
   }
 
-  generateCrosshair(mark: Mark): paper.Group {
+  generateCrosshair(mark: Crosshair): paper.Group {
     let vertical = new this.ps.Path.Line({
       from: [
         this.scaleFactor * mark.location.x,
@@ -241,13 +311,13 @@ export class OverlayRoot {
     });
   }
 
-  generateCircle(mark: Mark): paper.Group {
+  generateCircle(mark: Circle): paper.Group {
     let circle = new this.ps.Path.Circle({
       center: [
         this.scaleFactor * mark.location.x,
         this.scaleFactor * mark.location.y
       ],
-      radius: this.scaleFactor * mark.dimensions.radius,
+      radius: this.scaleFactor * mark.radius,
       fillColor: 'red'
     });
     return new this.ps.Group({
@@ -256,15 +326,15 @@ export class OverlayRoot {
     });
   }
 
-  generateBox(mark: Mark): paper.Group {
+  generateBox(mark: Box): paper.Group {
     let box = new this.ps.Path.Rectangle({
       point: [
         this.scaleFactor * mark.location.x,
         this.scaleFactor * mark.location.y
       ],
       size: [
-        this.scaleFactor * mark.dimensions.width,
-        this.scaleFactor * mark.dimensions.height
+        this.scaleFactor * mark.width,
+        this.scaleFactor * mark.height
       ],
       fillColor: 'red'
     });
@@ -274,7 +344,7 @@ export class OverlayRoot {
     });
   }
 
-  generateText(mark: Mark): paper.Group {
+  generateText(mark: Text): paper.Group {
     let text = new this.ps.PointText({
       point: [
         this.scaleFactor * mark.location.x,
@@ -293,7 +363,7 @@ export class OverlayRoot {
     });
   }
 
-  generateSvg(mark: Mark): paper.Group {
+  generateSvg(mark: SVG): paper.Group {
     // TODO
     let svgTextRaw = mark.text;
     if (!svgTextRaw) {
