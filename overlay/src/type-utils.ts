@@ -7,7 +7,7 @@ export type Operation = 'move';
 
 export type StepStatus = 'standby' |'step' | 'calibration';
 export type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox' | 'toolpath';
+                | 'calibrationBox' | 'toolpath' | 'screwPosition';
 export type TSSName = 'basic' | 'depthMap' | 'boundingBox';
 
 
@@ -77,3 +77,9 @@ export interface SVG extends Mark {
 export interface CalibrationBox extends Mark {
     //type: "calibrationBox";
 };
+
+export interface ScrewPosition extends Mark {
+    width: number;
+    height: number;
+    type: 'screwPosition';
+}

@@ -1,7 +1,7 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
 import { IR, StepStatus, Step, Mark, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath } from './type-utils'
-import {  lowerEBB, lowerGCode, lowerSBP } from './ir'
+import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
 // @customElement('overlay-root')
@@ -255,6 +255,32 @@ export class OverlayRoot {
   }
 
   generateCrosshair(mark: Crosshair): paper.Group {
+    console.log('Crosshair drawn');
+    let center = new this.ps.Point(mark.location.x * this.scaleFactor, mark.location.y * this.scaleFactor);
+    let canvasSize = this.ps.view.bounds.size;
+
+    
+    let topPoint = new this.ps.Point(center.x, 0);
+    let bottomPoint = new this.ps.Point(center.x, canvasSize.height);
+    let leftPoint = new paper.Point(0, center.y);
+    let rightPoint = new paper.Point(canvasSize.width, center.y);
+
+    let topLine = new paper.Path.Line(center, topPoint);
+    let bottomLine = new paper.Path.Line(center, bottomPoint);
+    let leftLine = new paper.Path.Line(center, leftPoint);
+    let rightLine = new paper.Path.Line(center, rightPoint);
+
+    topLine.strokeColor = new paper.Color('red');
+    bottomLine.strokeColor = new paper.Color('red');
+    leftLine.strokeColor = new paper.Color('red');
+    rightLine.strokeColor = new paper.Color('red');
+
+    return new this.ps.Group({
+      name: 'crosshair',
+      children: [topLine, bottomLine, leftLine, rightLine]
+    });
+
+    /*
     let vertical = new this.ps.Path.Line({
       from: [
         this.scaleFactor * mark.location.x,
@@ -280,7 +306,7 @@ export class OverlayRoot {
     return new this.ps.Group({
       name: 'crosshair',
       children: [vertical, horizontal]
-    });
+    });*/
   }
 
   generateCircle(mark: Circle): paper.Group {
