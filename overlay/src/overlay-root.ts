@@ -1,64 +1,8 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
+import { IR, StepStatus, Step, Mark, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath } from './type-utils'
+import {  lowerEBB, lowerGCode, lowerSBP } from './ir'
 
-interface Step {
-  name: string;
-  type: StepStatus;
-  marks: Mark[];
-}
-
-interface Mark {
-  type: MarkType;
-  location: { x: number, y: number };
-}
-
-// TODO: change to single quotes
-interface Arrow extends Mark {
-  width: number;
-  height: number;
-  type: "arrow";
-}
-
-interface Crosshair extends Mark {
-  type: "crosshair";
-}
-
-interface Box extends Mark {
-  width: number;
-  height: number;
-  type: "box";
-}
-
-interface Circle extends Mark {
-  radius: number;
-  type: "circle";
-}
-
-interface Text extends Mark {
-  text: string;
-  type: "text";
-}
-
-interface SVG extends Mark {
-  text: string;
-  type: "svg";
-}
-
-interface CalibrationBox extends Mark {
-  //type: "calibrationBox";
-}
-
-interface Toolpath extends Mark {
-  tssName: TSSName;
-  // TODO: figure out how to represent instructions
-  instructions: string[];
-  type: "toolpath";
-}
-
-type StepStatus = 'standby' |'step' | 'calibration';
-type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox' | 'toolpath';
-type TSSName = 'basic' | 'depthMap' | 'boundingBox';
 
 // @customElement('overlay-root')
 export class OverlayRoot {
@@ -186,31 +130,59 @@ export class OverlayRoot {
 
   // Generates the different toolpath visualizations
   generateToolpathVisualization(toolpath: Toolpath): paper.Group {
+    let irs: IR[];
+    if (toolpath.isa === 'ebb') {
+      irs = lowerEBB(toolpath);
+    } else if (toolpath.isa === 'gcode') {
+      irs = lowerGCode(toolpath);
+    } else {
+      irs = lowerSBP(toolpath);
+    }
+
     switch (toolpath.tssName) {
       case 'basic':
-        // TODO
-        return this.basicVis();
+        return this.basicVis(irs);
       case 'depthMap':
-        // TODO
-        return this.depthMapVis();
+        return this.depthMapVis(irs);
       case 'boundingBox':
-        // TODO
-        return this.boundingBoxVis();
+        return this.boundingBoxVis(irs);
     }
     return new this.ps.Group();
   }  
 
-  basicVis(): paper.Group {
-    console.log("basicVis called");
-    return new this.ps.Group();
+  basicVis(irs: IR[]): paper.Group {
+    console.log('basicVis called');
+    let path = new this.ps.Path();
+    path.strokeWidth = 1;
+    let currentPos = new this.ps.Point(0, 0);
+    
+    irs.forEach( (ir) => {
+      let newPos = new this.ps.Point(
+        ir.args.x || currentPos.x,
+        ir.args.y || currentPos.y
+      );
+
+      if (!currentPos.isClose(newPos, Number.EPSILON)) {
+        path.add(newPos);
+        currentPos = newPos;
+      }
+    });
+
+    if (irs[0].state.units === 'in') {
+      path.scale(25.4);
+    }
+
+    return new this.ps.Group({
+      children: [path]
+    });
   }
 
-  depthMapVis(): paper.Group {
+  depthMapVis(irs: IR[]): paper.Group {
     console.log("depthMapVis called");
     return new this.ps.Group();
   }
 
-  boundingBoxVis(): paper.Group {
+  boundingBoxVis(irs: IR[]): paper.Group {
     console.log("boundingBoxVis called");
     return new this.ps.Group();
   }
