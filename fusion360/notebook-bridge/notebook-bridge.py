@@ -34,12 +34,6 @@ class Response(typing.NamedTuple):
     error_count: int = 0
 
     def json(self) -> typing.Any:
-        """
-        Decode body's JSON.
-
-        Returns:
-            Pythonic representation of the JSON object
-        """
         try:
             output = json.loads(self.body)
         except json.JSONDecodeError:
@@ -110,7 +104,6 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
         self.content = {}
     def notify(self, args):
         try:
-            
             maybeResponse = request("http://localhost:3000/fusion360/poll")
             if maybeResponse and maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
@@ -120,8 +113,6 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                 new_generate_svg = response_json.get('generate_svg')
                 new_export_sbp = response_json.get('export_sbp')
                 new_create_outer = response_json.get('create_outer')
-
-                    
 
                 if(new_status != 'standby'):
                     if self.content.get('create_outer') != new_create_outer:

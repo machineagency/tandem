@@ -310,7 +310,7 @@ class PropellerCAM:
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
                 param.itemByName('job_stockFixedY').expression = self.mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = self.propellerHeight
+                param.itemByName('job_stockFixedZ').expression = self.propellerHeight 
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
         
