@@ -1,6 +1,6 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, StepStatus, Step, Mark, ScrewPosition, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath } from './type-utils'
+import { IR, StepStatus, Step, Mark, ScrewPosition, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
@@ -126,6 +126,8 @@ export class OverlayRoot {
         return this.generateCalibrationBox();
       case 'toolpath':
         return this.generateToolpathVisualization(mark as Toolpath);
+      case 'sectionAnnotation':
+        return this.generateSectionAnnotation(mark as SectionAnnotation);
     }
     return new paper.Group();
   }
@@ -190,6 +192,86 @@ export class OverlayRoot {
   boundingBoxVis(irs: IR[]): paper.Group {
     console.log("boundingBoxVis called");
     return new this.ps.Group();
+  }
+
+  generateSectionAnnotation(annotation: SectionAnnotation): paper.Group {
+    switch (annotation.annotationName) {
+      case 'screwDepth':
+        console.log('Not yet implemented');
+        return new this.ps.Group();
+      case 'passDepths':
+        return this.vizPassDepths(annotation);
+    }
+  }
+
+  /**
+   * Draws a section-view annotation that parses a toolpath and visualizes the depths
+   * of the passes as viewed from the side (section).
+   * @param annotation An annotation whose args are as follows { thickness: number }
+   */
+  vizPassDepths(annotation: SectionAnnotation): paper.Group {
+    // VIZ_FACTOR is a scaling factor that you can edit to make sure the visualization
+    // that is produced is appropriately sized.
+    let vizFactor = 3;
+    let mlWidth = 5;
+    let cutSpan = 40;
+    let topBottomCutSpan = 20;
+    let cutWidth = 1;
+    let anchor = annotation.location;
+    let thickness = annotation.args.thickness;
+    let mlHeight = thickness * this.scaleFactor * vizFactor;
+    let mlFrom = new this.ps.Point(anchor.x + mlWidth * 2, anchor.y);
+    let mlTo = new this.ps.Point(anchor.x + mlWidth * 2, anchor.y + mlHeight);
+    let mainline = new this.ps.Path.Line(mlFrom, mlTo);
+    mainline.strokeWidth = mlWidth;
+    mainline.strokeColor = new this.ps.Color(255, 255, 255);
+    /**
+     * In the annotation visualization, draw a line representing a pass.
+     * @param depth The depth of the pass.
+     * @param spanWidth How wide to draw the line.
+     * @param isDashed Dashed line or not.
+     */
+    let drawHorizLine = (depth: number, spanWidth: number, isDashed: boolean) => {
+      let dFrom = new this.ps.Point(
+        anchor.x + mlWidth * 2,
+        anchor.y + mlHeight + depth * vizFactor * this.scaleFactor
+      );
+      let dTo = new this.ps.Point(
+        anchor.x + mlWidth * 2 + spanWidth,
+        anchor.y + mlHeight + depth * vizFactor * this.scaleFactor
+      );
+      let cutline = new this.ps.Path.Line(dFrom, dTo);
+      cutline.strokeWidth = cutWidth;
+      cutline.strokeColor = new this.ps.Color(255, 255, 255);
+      if (isDashed) {
+        cutline.dashArray = [2, 1];
+      }
+      return cutline;
+    };
+    /**
+     * Given a list of instructions representing a multiple-pass milling
+     * operation, return an array of the depths of each pass.
+     * @param insts: Instructions as one would pass to a TSS.
+     */
+    let parseDepths = (insts: Instruction[]): number[] => {
+      // FIXME: for now ignore M3/J3
+      let zMoves = insts.filter((inst) => inst[1] === "Z");
+      let depths = zMoves.map((inst) => {
+        let toks = inst.split(",");
+        return parseFloat(toks[1]);
+      });
+      return depths.filter((depth) => depth < 0);
+    };
+
+    let parsedDepths = parseDepths(annotation.instructions);
+    let group = new this.ps.Group();
+    parsedDepths.forEach((depth) => {
+      let line = drawHorizLine(depth, cutSpan, true);
+      group.addChild(line)
+    });
+    group.addChild(drawHorizLine(0, topBottomCutSpan, false));
+    group.addChild(drawHorizLine(thickness, topBottomCutSpan, false));
+    return group;
   }
 
   // Calculates homography for the projection 

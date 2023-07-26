@@ -7,8 +7,9 @@ export type Operation = 'move';
 
 export type StepStatus = 'standby' |'step' | 'calibration';
 export type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox' | 'toolpath' | 'screwPosition';
+                | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation';
 export type TSSName = 'basic' | 'depthMap' | 'boundingBox';
+export type SectionAnnotationName = 'screwDepth' | 'passDepths';
 
 
 export interface Toolpath extends Mark {
@@ -83,3 +84,9 @@ export interface ScrewPosition extends Mark {
     height: number;
     type: 'screwPosition';
 }
+export interface SectionAnnotation extends Mark {
+    type: 'sectionAnnotation';
+    annotationName: SectionAnnotationName;
+    instructions: Instruction[];
+    args: Record<string, any>;
+};
