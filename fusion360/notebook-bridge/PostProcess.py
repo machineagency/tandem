@@ -13,6 +13,8 @@ def exportSBPWithSetupNamed(setup_name):
         doc = app.activeDocument
         products = doc.products
         product = products.itemByProductType("CAMProductType")
+        camWS = ui.workspaces.itemById('CAMEnvironment')
+        camWS.activate()
         
         if product == None:
             ui.messageBox('There are no CAM operations in the active document.  This script requires the active document to contain at least one CAM operation.',

@@ -14,15 +14,7 @@ class PropellerCAM:
         doc = self.app.activeDocument
         designWS = self.ui.workspaces.itemById('FusionSolidEnvironment')
         designWS.activate()
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
-
-        self.jigStock_x = design.userParameters.itemByName("jigStock_x").expression
-        self.jigStock_y = design.userParameters.itemByName("jigStock_y").expression
-        self.jigStock_z = design.userParameters.itemByName("jigStock_z").expression
-        self.mainStock_x = design.userParameters.itemByName("mainStock_x").expression
-        self.mainStock_y = design.userParameters.itemByName("mainStock_y").expression
-        self.mainStock_z = design.userParameters.itemByName("mainStock_z").expression
-        self.propellerHeight = design.userParameters.itemByName("propellerHeight").expression
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
 
         # switch to manufacturing space
         camWS = self.ui.workspaces.itemById('CAMEnvironment')
@@ -80,6 +72,9 @@ class PropellerCAM:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
             setup = getSetup('alignmentJig', setups)
+            jigStock_x = self.design.userParameters.itemByName("jigStock_x").expression
+            jigStock_y = self.design.userParameters.itemByName("jigStock_y").expression
+            jigStock_z = self.design.userParameters.itemByName("jigStock_z").expression
             if(setup == None):
                 setupInput = setups.createInput(adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
@@ -95,13 +90,13 @@ class PropellerCAM:
                 param = setupInput.parameters
                 # set offset mode
                 
-                param.itemByName('job_stockFixedX').expression = self.jigStock_x
+                param.itemByName('job_stockFixedX').expression = jigStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedY').expression = self.jigStock_y
+                param.itemByName('job_stockFixedY').expression = jigStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedZ').expression = self.jigStock_z
+                param.itemByName('job_stockFixedZ').expression = jigStock_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
@@ -148,8 +143,6 @@ class PropellerCAM:
                 # add the operation to the setup
                 boreOp = setup.operations.add(input)
                 cam.generateToolpath(boreOp)
-                # faceOp = setup.operations.add(input)
-                # cam.generateToolpath(faceOp)
  
         except:
             pass
@@ -158,10 +151,14 @@ class PropellerCAM:
     def create_foam_surface(self):
         #################### create setup FoamSurface ####################
         try:
+            
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             
             setups = cam.setups
             setup = getSetup('foamSurface', setups)
+            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
+            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
+            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
             if setup == None:
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
@@ -181,11 +178,11 @@ class PropellerCAM:
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 
-                param.itemByName('job_stockFixedX').expression = self.mainStock_x
+                param.itemByName('job_stockFixedX').expression = mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = self.mainStock_y
+                param.itemByName('job_stockFixedY').expression = mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = self.mainStock_z
+                param.itemByName('job_stockFixedZ').expression = mainStock_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
@@ -218,6 +215,10 @@ class PropellerCAM:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
             setup = getSetup('foamBore', setups)
+            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
+            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
+            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
+            propellerHeight = self.design.userParameters.itemByName('propellerHeight').expression
             if setup == None:
                 #################### create setup foamBore ####################
                 setupInput = setups.createInput(
@@ -235,15 +236,13 @@ class PropellerCAM:
                 param = setup.parameters
                 # set offset mode
 
-
-
                 #properllerHeight
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = self.mainStock_x
+                param.itemByName('job_stockFixedX').expression = mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = self.mainStock_y
+                param.itemByName('job_stockFixedY').expression = mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-        
+                param.itemByName('job_stockFixedY').expression = propellerHeight
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
 
@@ -280,8 +279,11 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            
             setup = getSetup('topCut', setups)
+            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
+            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
+            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
+            propellerHeight = self.design.userParameters.itemByName("propellerHeight").expression
             if setup == None:
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
@@ -306,11 +308,11 @@ class PropellerCAM:
         
                 # set offset mode
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = self.mainStock_x
+                param.itemByName('job_stockFixedX').expression = mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = self.mainStock_y
+                param.itemByName('job_stockFixedY').expression = mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = self.propellerHeight 
+                param.itemByName('job_stockFixedZ').expression = propellerHeight 
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
         
@@ -335,8 +337,6 @@ class PropellerCAM:
                 input.parameters.itemByName('rampType').expression = "'plunge'"
 
                 if innerTopEdges is not None:
-                    edgeList = [e for e in innerTopEdges]
-
                     cadcontours2dParam: adsk.cam.CadContours2dParameterValue = input.parameters.itemByName('stockContours').value
                     # Get the CurveSelections object from the CAD contour. This
                     # object manages the list of contour selections.
@@ -371,6 +371,10 @@ class PropellerCAM:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
             setup = getSetup('bottomCut', setups)
+            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
+            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
+            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
+            propellerHeight = self.design.userParameters.itemByName("propellerHeight").expression
             if setup == None:
                 #################### create setup BottomCut ####################
                 setupInput = setups.createInput(
@@ -394,13 +398,11 @@ class PropellerCAM:
                     
                 # set offset mode
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = self.mainStock_x
+                param.itemByName('job_stockFixedX').expression = mainStock_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = self.mainStock_y
+                param.itemByName('job_stockFixedY').expression = mainStock_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-
-                param.itemByName('job_stockFixedZ').expression = self.propellerHeight
-
+                param.itemByName('job_stockFixedZ').expression = propellerHeight
                 param.itemByName('job_stockFixedZMode').expression = "'center'"
                 param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
                 param.itemByName('wcs_orientation_mode').expression = "'axesZY'"

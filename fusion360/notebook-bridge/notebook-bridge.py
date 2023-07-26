@@ -102,6 +102,8 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
     def __init__(self):
         super().__init__()
         self.content = {}
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        self.activeSelection = adsk.fusion.Design.cast(design)
     def notify(self, args):
         try:
             maybeResponse = request("http://localhost:3000/fusion360/poll")
@@ -117,11 +119,13 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                 if(new_status != 'standby'):
                     if self.content.get('create_outer') != new_create_outer:
                         self.content['create_outer'] = new_create_outer
-                        if new_create_outer:
+                        if new_create_outer and (not recursivelyFindBody("outer-SPOIL")):
                             bottomface, topface = createOuter()
                             innerBtmLoopEdgeCount = bottomface.loops.item(0).edges.count
                             innerLoopEdgeCount = topface.loops.item(0).edges.count
                             holeFaces = holeDrill(topface)
+                            createTab()
+                            combineOuter()
 
                             self.content['bottomface'] = bottomface
                             self.content['topface'] = topface
@@ -149,9 +153,9 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                                 elif setup == "foamBore":
                                     cam.create_foam_bore(self.content['holeFaces'])
                                 elif setup == "topCut":
-                                    cam.create_top_cut(getLoopWithEdgesOnFace(innerLoopEdgeCount, topface))
+                                    cam.create_top_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['topface']))
                                 elif setup == "bottomCut":
-                                    cam.create_bottom_cut(getLoopWithEdgesOnFace(innerBtmLoopEdgeCount, bottomface))
+                                    cam.create_bottom_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['bottomface']))
 
                     # Check if 'generate_svg' is the same, if not, update and execute.
                     if self.content.get('generate_svg') != new_generate_svg:
@@ -165,7 +169,13 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                             for setupName in new_export_sbp:
                                 exportSBPWithSetupNamed(setupName)
                 else:
-                    self.content = {}
+                    self.content['setup_cam'] = None
+                    self.content['generate_svg'] = None
+                    self.content['export_sbp'] = None
+                    self.content['setup_cam'] = None
+                    self.content['create_param'] = None
+                    self.content['create_outer'] = None
+
 
         except:
             if ui:
@@ -215,3 +225,18 @@ def getLoopWithEdgesOnFace(edgeCount, face):
     for i in range(face.loops.count):
         if(face.loops.item(i).edges.count == edgeCount):
             return face.loops.item(i).edges
+
+def recursivelyFindBody(name: str):
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    activeSelection = adsk.fusion.Design.cast(design)
+    rootComponent = activeSelection.rootComponent
+    for occurence in rootComponent.allOccurrences:
+        if(occurence.name == name):
+            return occurence
+        for bBody in occurence.bRepBodies:
+            if(bBody.name == name):
+                return bBody
+    for bBody in rootComponent.bRepBodies:
+        if(bBody.name == name):
+            return bBody
+    return None
