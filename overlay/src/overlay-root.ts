@@ -1,6 +1,6 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, StepStatus, Step, Mark, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath } from './type-utils'
+import { IR, StepStatus, Step, Mark, ScrewPosition, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
@@ -120,6 +120,8 @@ export class OverlayRoot {
         return this.generateText(mark as Text);
       case 'svg':
         return this.generateSvg(mark as SVG);
+      case 'screwPosition':
+        return this.generateScrewPosition(mark as ScrewPosition);
       case 'calibrationBox':
         return this.generateCalibrationBox();
       case 'toolpath':
@@ -172,7 +174,10 @@ export class OverlayRoot {
       path.scale(25.4);
     }
 
+    path.strokeColor = new paper.Color('red');
+
     return new this.ps.Group({
+      name: 'toolpath',
       children: [path]
     });
   }
@@ -380,11 +385,71 @@ export class OverlayRoot {
     return new this.ps.Group();
   }
 
+  generateScrewPosition(mark: ScrewPosition): paper.Group {
+    // creates an outline of the stock
+    let box = new this.ps.Path.Rectangle({
+      point: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * mark.location.y
+      ],
+      size: [
+        this.scaleFactor * mark.width,
+        this.scaleFactor * mark.height
+      ],
+      strokeColor: 'red'
+    });
+
+    // generates the screw position Xs
+    let xSize = 4;
+    // offset of the screw from corner of the stock
+    let offset = 10;
+
+    let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
+    let topLeft = new this.ps.Point(box.bounds.bottomLeft.x, box.bounds.bottomLeft.y);
+    let centerRight = new this.ps.Point(box.bounds.rightCenter.x, box.bounds.center.y);
+
+    topLeft.x += offset;
+    topLeft.y -= offset;
+    bottomLeft.x += offset;
+    bottomLeft.y += offset;
+    centerRight.x -= offset;
+
+    let x1 = drawX(bottomLeft.x, bottomLeft.y, xSize);
+    let x2 = drawX(topLeft.x, topLeft.y, xSize);
+    let x3 = drawX(centerRight.x, centerRight.y, xSize);
+
+    let group = new this.ps.Group({
+      name: 'box',
+      children: [box, x1[0], x1[1], x2[0], x2[1], x3[0], x3[1]]
+    });
+
+    return group;
+  }
+
 }
 
 function main() {
   let overlayRoot = new OverlayRoot();
   (window as any).oRoot = overlayRoot;
+}
+
+// helper function to draw an x given a center and a size
+function drawX(x: number, y: number, size: number): paper.Path.Line[] {
+  let line1 = new paper.Path.Line({
+    from: [x - size, y - size],
+    to: [x + size, y + size],
+    strokeColor: 'red',
+    strokeWidth: 2
+  });
+
+  let line2 = new paper.Path.Line({
+    from: [x + size, y - size],
+    to: [x - size, y + size],
+    strokeColor: 'red',
+    strokeWidth: 2
+  });
+
+  return [line1, line2];
 }
 
 main();
