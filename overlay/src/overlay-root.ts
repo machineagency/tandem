@@ -254,7 +254,6 @@ export class OverlayRoot {
     let vizScale = 20;
     let stockDepth = annotation.args.stockDepth;
     let modelDepth = annotation.args.modelDepth;
-    let offset = 0.5;
     let bitWidth = 0.2;
     
     let group = new paper.Group();
@@ -578,7 +577,7 @@ export class OverlayRoot {
     // generates the screw position Xs
     let xSize = 4;
     // offset of the screw from corner of the stock
-    let offset = 10;
+    let offset = mark.offset;
 
     // let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
     let bottomLeft = new this.ps.Point(mark.location.x * this.scaleFactor, mark.location.y * this.scaleFactor);

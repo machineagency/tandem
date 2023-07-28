@@ -17,6 +17,7 @@ export interface Toolpath extends Mark {
     tssName: TSSName;
     isa: ISA;
     instructions: Instruction[];
+    toolType: ToolType;
     type: 'toolpath';
 }
 
@@ -92,6 +93,7 @@ export interface CalibrationBox extends Mark {
 export interface ScrewPosition extends Mark {
     width: number;
     height: number;
+    offset: number;
     type: 'screwPosition';
 }
 export interface SectionAnnotation extends Mark {
