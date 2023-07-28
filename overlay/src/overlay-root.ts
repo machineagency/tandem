@@ -256,8 +256,7 @@ export class OverlayRoot {
     let modelDepth = annotation.args.modelDepth;
     let offset = 0.5;
     let bitWidth = 0.2;
-    let bitHeight = 1;
-
+    
     let group = new paper.Group();
 
     // Calculate the dimensions and positions
@@ -281,8 +280,8 @@ export class OverlayRoot {
     let drillPoint = new this.ps.Point(startX + 1, stockBottomY + (modelDepth * .5));
     let leftPt = new this.ps.Point(startX + 1  - (bitWidth / 2), stockBottomY + modelDepth);
     let rightPt = new this.ps.Point(startX + 1 + (bitWidth / 2), stockBottomY + modelDepth);
-    let topL = new this.ps.Point(leftPt.x, leftPt.y + bitHeight);
-    let topR = new this.ps.Point(rightPt.x, rightPt.y + bitHeight);
+    let topL = new this.ps.Point(leftPt.x, stockTopY + 0.25);
+    let topR = new this.ps.Point(rightPt.x, stockTopY + 0.25);
 
     let path = new paper.Path();
     path.add(topL);
