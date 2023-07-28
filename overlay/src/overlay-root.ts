@@ -158,11 +158,8 @@ export class OverlayRoot {
           group.addChild(cloneGroup);
         }
         break;
-      case 'depthMap':
-        group = this.depthMapVis(irs);
-        break;
-      case 'boundingBox':
-        group = this.boundingBoxVis(irs);
+      case 'bore':
+        group = this.boreVis(irs, toolpath.dowelDiam);
         break;
     }
     group.position = new this.ps.Point(toolpath.location.x * this.scaleFactor, toolpath.location.y * this.scaleFactor);
@@ -170,7 +167,6 @@ export class OverlayRoot {
   }  
 
   basicVis(irs: IR[]): paper.Group {
-    console.log('basicVis called');
     let path = new this.ps.Path();
     let group = new paper.Group();
     group.name = 'toolpath';
@@ -220,14 +216,48 @@ export class OverlayRoot {
     return group;
   }
 
-  depthMapVis(irs: IR[]): paper.Group {
-    console.log("depthMapVis called");
-    return new this.ps.Group();
-  }
+  boreVis(irs: IR[], diam: number): paper.Group {
+    console.log('boreVis called');
+    let group = new paper.Group();
+    let first = false;
+    let second = false;
+    let p1;
+    let p2;
 
-  boundingBoxVis(irs: IR[]): paper.Group {
-    console.log("boundingBoxVis called");
-    return new this.ps.Group();
+    for (let i = 0; i !== irs.length; i++) {
+      let ir = irs[i];
+      if (!first && ir.args.x !== 0 && ir.args.y !== 0 && ir.args.x !== null && ir.args.y !== null) {
+        p1 = new this.ps.Point(ir.args.x * this.scaleFactor, ir.args.y * this.scaleFactor);
+        console.log(p1);
+        first = true;
+      } if (!second && ir.args.x !== null && ir.args.x < 0 && ir.args.y !== null) {
+        p2 = new this.ps.Point(ir.args.x * this.scaleFactor, ir.args.y * this.scaleFactor);
+        console.log(p2);
+        second = true;
+      }
+
+      if (second && first) {
+        break;
+      }
+    }
+
+    let circle1 = new this.ps.Path.Circle({
+          center: p1,
+          radius: diam / 2 * this.scaleFactor,
+          fillColor: 'red'
+    });
+     
+    let circle2 = new this.ps.Path.Circle({
+      center: p2,
+      radius: diam / 2 * this.scaleFactor,
+      fillColor: 'red'
+    });
+    console.log(circle1);
+    console.log(circle2);
+    group.addChild(circle1);
+    group.addChild(circle2);
+    
+    return group;
   }
 
   generateSectionAnnotation(annotation: SectionAnnotation): paper.Group {

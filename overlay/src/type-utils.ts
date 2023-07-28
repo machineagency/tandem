@@ -8,7 +8,7 @@ export type Operation = 'move' | 'arc';
 export type StepStatus = 'standby' |'step' | 'calibration';
 export type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
                 | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation' | 'boxOutline';
-export type TSSName = 'basic' | 'depthMap' | 'boundingBox';
+export type TSSName = 'basic' | 'bore';
 export type SectionAnnotationName = 'screwDepth' | 'passDepths';
 export type ToolType = 'face' | 'ball';
 
@@ -19,6 +19,7 @@ export interface Toolpath extends Mark {
     instructions: Instruction[];
     toolType: ToolType;
     type: 'toolpath';
+    dowelDiam: number;
 }
 
 export interface IR {
