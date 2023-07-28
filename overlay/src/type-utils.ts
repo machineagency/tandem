@@ -19,6 +19,7 @@ export interface Toolpath extends Mark {
     instructions: Instruction[];
     toolType: ToolType;
     type: 'toolpath';
+    toolType: ToolType;
 }
 
 export interface IR {
