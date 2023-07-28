@@ -1,6 +1,6 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, StepStatus, Step, Mark, ScrewPosition, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction } from './type-utils'
+import { IR, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction, ToolType } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
@@ -114,6 +114,8 @@ export class OverlayRoot {
         return this.generateCrosshair(mark as Crosshair);
       case 'box':
         return this.generateBox(mark as Box);
+      case 'boxOutline':
+        return this.generateBoxOutline(mark as BoxOutline);
       case 'circle':
         return this.generateCircle(mark as Circle);
       case 'text':
@@ -143,22 +145,38 @@ export class OverlayRoot {
       irs = lowerSBP(toolpath);
     }
 
+    let group = new paper.Group();
     switch (toolpath.tssName) {
       case 'basic':
-        return this.basicVis(irs);
+        group = this.basicVis(irs);
+        if (toolpath.toolType === 'face') {
+          let toolDiam = 1.25;
+          let cloneGroup = group.clone();
+          cloneGroup.strokeWidth = toolDiam * this.scaleFactor;
+          cloneGroup.opacity = 0.25;
+          cloneGroup.strokeColor = new paper.Color('green');
+          group.addChild(cloneGroup);
+        }
+        break;
       case 'depthMap':
-        return this.depthMapVis(irs);
+        group = this.depthMapVis(irs);
+        break;
       case 'boundingBox':
-        return this.boundingBoxVis(irs);
+        group = this.boundingBoxVis(irs);
+        break;
     }
-    return new this.ps.Group();
+    group.position = new this.ps.Point(toolpath.location.x * this.scaleFactor, toolpath.location.y * this.scaleFactor);
+    return group;
   }  
 
   basicVis(irs: IR[]): paper.Group {
     console.log('basicVis called');
     let path = new this.ps.Path();
-    path.strokeWidth = 1;
+    let group = new paper.Group();
+    group.name = 'toolpath';
+
     let currentPos = new this.ps.Point(0, 0);
+    let previousPos = new this.ps.Point(0, 0);
     
     irs.forEach( (ir) => {
       let newPos = new this.ps.Point(
@@ -166,22 +184,40 @@ export class OverlayRoot {
         ir.args.y || currentPos.y
       );
 
-      if (!currentPos.isClose(newPos, Number.EPSILON)) {
-        path.add(newPos);
-        currentPos = newPos;
+      if (ir.op === "arc" && ir.args.dx !== null && ir.args.dy !== null ) {
+        console.log(ir);
+        group.addChild(path);
+        path = new this.ps.Path();
+        path.strokeWidth = 1;
+        // ending point of the arc is newPos
+        // current position should be the starting point of the arc
+
+        // calculate through point of the arc
+        let radius = Math.sqrt(Math.pow(ir.args.dx, 2) + Math.pow(ir.args.dy, 2));
+        let center = new this.ps.Point(currentPos.x + ir.args.dx, currentPos.y + ir.args.dy);
+        let throughPt;
+        if (ir.state.clockwise === 1) {
+          throughPt = new this.ps.Point(center.x - radius, center.y);
+        } else {
+          throughPt = new this.ps.Point(center.x + radius, center.y);
+        }
+        let arc = new this.ps.Path.Arc(currentPos, throughPt, newPos);
+        group.addChild(arc);
       }
+
+      if (currentPos.getDistance(previousPos) > Number.EPSILON) {
+        path.add(newPos);
+      }
+      
+      previousPos = currentPos;
+      currentPos = newPos;
     });
 
-    if (irs[0].state.units === 'in') {
-      path.scale(25.4);
-    }
+    group.addChild(path);
+    group.scale(this.scaleFactor);
+    group.strokeColor = new paper.Color('green');
 
-    path.strokeColor = new paper.Color('red');
-
-    return new this.ps.Group({
-      name: 'toolpath',
-      children: [path]
-    });
+    return group;
   }
 
   depthMapVis(irs: IR[]): paper.Group {
@@ -195,13 +231,113 @@ export class OverlayRoot {
   }
 
   generateSectionAnnotation(annotation: SectionAnnotation): paper.Group {
+    let group = new paper.Group();
     switch (annotation.annotationName) {
       case 'screwDepth':
-        console.log('Not yet implemented');
-        return new this.ps.Group();
+        group =  this.vizScrewDepth(annotation);
+        break;
       case 'passDepths':
-        return this.vizPassDepths(annotation);
+        group = this.vizPassDepths(annotation);
+        break;
     }
+    group.position = new this.ps.Point(annotation.location.x * this.scaleFactor, annotation.location.y * this.scaleFactor);
+    return group;
+  }
+
+  /**
+   * Draws a section-view annotation that visualizes the minimum depth at which
+   * the screw needs to be secured in the stock before being able to safely mill.
+   * @param annotation An annotation whose args are as follows
+   *  { stockDepth: number, modelDepth: number }
+   */
+  vizScrewDepth(annotation: SectionAnnotation): paper.Group {
+    let vizScale = 20;
+    let stockDepth = annotation.args.stockDepth;
+    let modelDepth = annotation.args.modelDepth;
+    let offset = 0.5;
+    let bitWidth = 0.2;
+    let bitHeight = 1;
+
+    let group = new paper.Group();
+
+    // Calculate the dimensions and positions
+    let startX = 50; // Starting X-coordinate for the lines and drill bit
+    let stockTopY = 50; // Y-coordinate for the top of the stock
+    let stockBottomY = stockTopY - stockDepth; // Y-coordinate for the bottom of the stock
+
+    // Create the stock lines
+    let stockTopLine = new paper.Path.Line(new this.ps.Point(startX, stockTopY), new this.ps.Point(startX + 2, stockTopY));
+    let stockBottomLine = new paper.Path.Line(new this.ps.Point(startX, stockBottomY), new this.ps.Point(startX + 2, stockBottomY));
+
+    stockTopLine.strokeColor = new paper.Color('yellow');
+    stockTopLine.strokeWidth = 1;
+    stockBottomLine.strokeColor = new paper.Color('yellow');
+    stockBottomLine.strokeWidth = 1;
+
+    group.addChild(stockTopLine);
+    group.addChild(stockBottomLine);
+
+    // create drill bit
+    let drillPoint = new this.ps.Point(startX + 1, stockBottomY + (modelDepth * .5));
+    let leftPt = new this.ps.Point(startX + 1  - (bitWidth / 2), stockBottomY + modelDepth);
+    let rightPt = new this.ps.Point(startX + 1 + (bitWidth / 2), stockBottomY + modelDepth);
+    let topL = new this.ps.Point(leftPt.x, leftPt.y + bitHeight);
+    let topR = new this.ps.Point(rightPt.x, rightPt.y + bitHeight);
+
+    let path = new paper.Path();
+    path.add(topL);
+    path.add(leftPt);
+    path.add(drillPoint);
+    path.add(rightPt);
+    path.add(topR);
+    path.strokeColor = new paper.Color('white');
+    path.strokeWidth = 1;
+
+    group.addChild(path);
+
+    // add dashed line for bottom of drill bit
+    let drillLine = new paper.Path.Line(new this.ps.Point(startX, stockBottomY + modelDepth), new this.ps.Point(startX + 2, stockBottomY + modelDepth));
+    drillLine.strokeColor = new paper.Color('pink');
+    drillLine.dashArray = [1, 2];
+    drillLine.strokeWidth = 0.75;
+
+    group.addChild(drillLine);
+
+    // add label for how deep to drill
+    let top = new paper.Path.Line(new this.ps.Point(startX + 2.25, stockTopY), new this.ps.Point(startX + 2.45, stockTopY));
+    top.strokeColor = new paper.Color('pink');
+    top.strokeWidth = 0.75;
+
+    let bottom = new paper.Path.Line(new this.ps.Point(startX + 2.25, stockBottomY + modelDepth), new this.ps.Point(startX + 2.45, stockBottomY + modelDepth));
+    bottom.strokeColor = new paper.Color('pink');
+    bottom.strokeWidth = 0.75;
+
+    let height = new paper.Path.Line(new this.ps.Point(startX + 2.35, stockBottomY + modelDepth), new this.ps.Point(startX + 2.35, stockTopY));
+    height.strokeColor = new paper.Color('pink');
+    height.strokeWidth = 0.75;
+
+    group.addChild(top);
+    group.addChild(bottom);
+    group.addChild(height);
+    group.scale(vizScale);
+
+    // add text label
+    let text = new this.ps.PointText({
+      point: [
+        startX + 30.45,
+        stockTopY
+      ],
+      content: stockDepth - modelDepth + ' in',
+      fillColor: 'pink',
+      fontFamily: 'Courier New',
+      fontWeight: 'bold',
+      fontSize: 10
+    });
+    text.scale(1, -1);
+
+    group.addChild(text);
+
+    return group;
   }
 
   /**
@@ -357,43 +493,15 @@ export class OverlayRoot {
     let leftLine = new paper.Path.Line(center, leftPoint);
     let rightLine = new paper.Path.Line(center, rightPoint);
 
-    topLine.strokeColor = new paper.Color('red');
-    bottomLine.strokeColor = new paper.Color('red');
-    leftLine.strokeColor = new paper.Color('red');
-    rightLine.strokeColor = new paper.Color('red');
+    topLine.strokeColor = new paper.Color('pink');
+    bottomLine.strokeColor = new paper.Color('pink');
+    leftLine.strokeColor = new paper.Color('pink');
+    rightLine.strokeColor = new paper.Color('pink');
 
     return new this.ps.Group({
       name: 'crosshair',
       children: [topLine, bottomLine, leftLine, rightLine]
     });
-
-    /*
-    let vertical = new this.ps.Path.Line({
-      from: [
-        this.scaleFactor * mark.location.x,
-        0
-      ],
-      to: [
-        this.scaleFactor * mark.location.x,
-        this.scaleFactor * this.largeNumber
-      ],
-      strokeColor: 'red'
-    });
-    let horizontal = new this.ps.Path.Line({
-      from: [
-        0,
-        this.scaleFactor * mark.location.y
-      ],
-      to: [
-        this.scaleFactor * this.largeNumber,
-        this.scaleFactor * mark.location.y
-      ],
-      strokeColor: 'red'
-    });
-    return new this.ps.Group({
-      name: 'crosshair',
-      children: [vertical, horizontal]
-    });*/
   }
 
   generateCircle(mark: Circle): paper.Group {
@@ -468,27 +576,17 @@ export class OverlayRoot {
   }
 
   generateScrewPosition(mark: ScrewPosition): paper.Group {
-    // creates an outline of the stock
-    let box = new this.ps.Path.Rectangle({
-      point: [
-        this.scaleFactor * mark.location.x,
-        this.scaleFactor * mark.location.y
-      ],
-      size: [
-        this.scaleFactor * mark.width,
-        this.scaleFactor * mark.height
-      ],
-      strokeColor: 'red'
-    });
-
     // generates the screw position Xs
     let xSize = 4;
     // offset of the screw from corner of the stock
     let offset = 10;
 
-    let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
-    let topLeft = new this.ps.Point(box.bounds.bottomLeft.x, box.bounds.bottomLeft.y);
-    let centerRight = new this.ps.Point(box.bounds.rightCenter.x, box.bounds.center.y);
+    // let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
+    let bottomLeft = new this.ps.Point(mark.location.x * this.scaleFactor, mark.location.y * this.scaleFactor);
+    //let topLeft = new this.ps.Point(box.bounds.bottomLeft.x, box.bounds.bottomLeft.y);
+    let topLeft = new this.ps.Point(mark.location.x * this.scaleFactor, (mark.location.y + + mark.height) * this.scaleFactor);
+    //let centerRight = new this.ps.Point(box.bounds.rightCenter.x, box.bounds.center.y);
+    let centerRight = new this.ps.Point((mark.location.x + mark.width) * this.scaleFactor, (mark.location.y + mark.height / 2) * this.scaleFactor);
 
     topLeft.x += offset;
     topLeft.y -= offset;
@@ -501,11 +599,30 @@ export class OverlayRoot {
     let x3 = drawX(centerRight.x, centerRight.y, xSize);
 
     let group = new this.ps.Group({
-      name: 'box',
-      children: [box, x1[0], x1[1], x2[0], x2[1], x3[0], x3[1]]
+      name: 'screwPositions',
+      children: [x1[0], x1[1], x2[0], x2[1], x3[0], x3[1]]
     });
 
     return group;
+  }
+
+  generateBoxOutline(mark: BoxOutline): paper.Group {
+    let box = new this.ps.Path.Rectangle({
+      point: [
+        this.scaleFactor * mark.location.x,
+        this.scaleFactor * mark.location.y
+      ],
+      size: [
+        this.scaleFactor * mark.width,
+        this.scaleFactor * mark.height
+      ],
+      strokeColor: 'red'
+    });
+
+    return new this.ps.Group({
+      name: 'boxOutline',
+      children: [box]
+    });
   }
 
 }

@@ -3,13 +3,14 @@ export type GCode = 'gcode';
 export type SBP = 'sbp';
 export type ISA = EBB | GCode | SBP;
 export type Instruction = string;
-export type Operation = 'move';
+export type Operation = 'move' | 'arc';
 
 export type StepStatus = 'standby' |'step' | 'calibration';
 export type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation';
+                | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation' | 'boxOutline';
 export type TSSName = 'basic' | 'depthMap' | 'boundingBox';
 export type SectionAnnotationName = 'screwDepth' | 'passDepths';
+export type ToolType = 'face' | 'ball';
 
 
 export interface Toolpath extends Mark {
@@ -26,10 +27,13 @@ export interface IR {
         y: number | null;
         z: number | null;
         f: number | null;
+        dx: number | null;
+        dy: number | null;
     }, 
     state: {
         units: string | null;
         toolOnBed: boolean;
+        clockwise: number | null;
     }
 };
 
@@ -58,6 +62,12 @@ export interface Box extends Mark {
     width: number;
     height: number;
     type: 'box';
+};
+
+export interface BoxOutline extends Mark {
+    width: number;
+    height: number;
+    type: 'boxOutline'
 };
   
 export interface Circle extends Mark {

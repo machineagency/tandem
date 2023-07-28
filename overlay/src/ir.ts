@@ -1,25 +1,31 @@
 import { Toolpath, Instruction, Operation, IR } from './type-utils.ts';
 
-type Units = "mm" | "in";
+type Units = 'mm' | 'in';
 
 export function ir(operation: Operation,
     x: number | null,
     y: number | null,
     z: number | null,
     f: number | null,
+    dx: number | null,
+    dy: number | null,
     units: Units | null,
-    toolOnBed: boolean): IR {
+    toolOnBed: boolean,
+    clockwise: number| null): IR {
     return {
         op: operation,
         args: {
             x: x,
             y: y,
             z: z,
-            f: f
+            f: f,
+            dx: dx,
+            dy: dy
         },
         state: {
             units: units,
-            toolOnBed: toolOnBed
+            toolOnBed: toolOnBed,
+            clockwise: clockwise
         }
     }
 }
@@ -55,18 +61,18 @@ export function lowerGCode(gcodeTp: Toolpath) {
 
         let newPosition;
         let opcode = findOpcode(instruction, opcodeRe);
-        if (opcode === "G21") {
-            units = "mm";
-        } else if (opcode === "G20") {
-            units = "in";
+        if (opcode === 'G21') {
+            units = 'mm';
+        } else if (opcode === 'G20') {
+            units = 'in';
         }
-        if (opcode === "G0" || opcode === "G1") {
+        if (opcode === 'G0' || opcode === 'G1') {
             let opx = findArg(instruction, opXRe);
             let opy = findArg(instruction, opYRe);
             let opz = findArg(instruction, opZRe);
             let opf = findArg(instruction, opFRe);
 
-            newPosition = ir("move", opx, opy, opz, opf, units, true);
+            newPosition = ir('move', opx, opy, opz, 0, 0, opf, units, true, null);
             irs.push(newPosition);
         }
     });
@@ -82,20 +88,23 @@ export function lowerSBP(sbpTp: Toolpath) {
         }
         
         let newPosition;
-        let tokens = instruction.trim().split(",");
+        let tokens = instruction.trim().split(',');
         let opcode = tokens[0];
-        if (opcode === "M2" || opcode === "J2") {
-            newPosition = ir("move", parseFloat(tokens[1]), 
-                             parseFloat(tokens[2]), 0, null, null, true);
-        } else if (opcode === "M3" || opcode === "J3") {
-            newPosition = ir("move", parseFloat(tokens[1]), parseFloat(tokens[2]),
-                             parseFloat(tokens[3]), null, null, true);
-        } else if (opcode === "MZ" || opcode === "JZ") {
-            newPosition = ir("move", 0, 0, parseFloat(tokens[1]), null, null, true);
-        } else if (opcode === "MX" || opcode === "JX") {
-            newPosition = ir("move", parseFloat(tokens[1]), 0, 0, null, null, true);
-        } else if (opcode === "MY" || opcode === "JY") {
-            newPosition = ir("move", 0, parseFloat(tokens[1]), 0, null, null, true);
+        if (opcode === 'M2' || opcode === 'J2') {
+            newPosition = ir('move', parseFloat(tokens[1]), 
+                             parseFloat(tokens[2]), 0, null, null, null, null, true, null);
+        } else if (opcode === 'M3' || opcode === 'J3') {
+            newPosition = ir('move', parseFloat(tokens[1]), parseFloat(tokens[2]),
+                             parseFloat(tokens[3]), null, null, null, null, true, null);
+        } else if (opcode === 'MZ' || opcode === 'JZ') {
+            newPosition = ir('move', 0, 0, parseFloat(tokens[1]), null, null, null, null, true, null);
+        } else if (opcode === 'MX' || opcode === 'JX') {
+            newPosition = ir('move', parseFloat(tokens[1]), 0, 0, null, null, null, null, true, null);
+        } else if (opcode === 'MY' || opcode === 'JY') {
+            newPosition = ir('move', 0, parseFloat(tokens[1]), 0, null, null, null, null, true, null);
+        } else if (opcode === 'CG') {
+            //console.log(tokens);
+            newPosition = ir('arc', parseFloat(tokens[2]), parseFloat(tokens[3]), 0, null, parseFloat(tokens[4]), parseFloat(tokens[5]), null, true, parseFloat(tokens[7]));
         } else {
             return;
         }
@@ -131,7 +140,7 @@ export function lowerEBB(ebbTp: Toolpath) {
             aSteps = parseInt(tokens[2]);
             bSteps = parseInt(tokens[3]);
             xyChange = getXyMmChangeFromABSteps(aSteps, bSteps);
-            newPosition = ir('move', currX + xyChange.xChange, currY + xyChange.yChange, currZ, null, null, prevToolOnBed);
+            newPosition = ir('move', currX + xyChange.xChange, currY + xyChange.yChange, currZ, null, null, null, null, prevToolOnBed, null);
             irs.push(newPosition);
             currX += xyChange.xChange;
             currY += xyChange.yChange;
@@ -139,7 +148,7 @@ export function lowerEBB(ebbTp: Toolpath) {
         if (opcode === 'SP') {
             penValue = parseInt(tokens[1]);
             let toolOnBed = penValue === 0;
-            newPosition = ir('move', currX, currY, currZ, null, null, toolOnBed);
+            newPosition = ir('move', currX, currY, currZ, null, null, null, null, toolOnBed, null);
             irs.push(newPosition);
             prevToolOnBed = toolOnBed;
         }
