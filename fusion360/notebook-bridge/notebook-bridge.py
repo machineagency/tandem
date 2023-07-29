@@ -125,7 +125,6 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                             innerLoopEdgeCount = topface.loops.item(0).edges.count
                             holeFaces = holeDrill(topface)
                             createTab()
-                            combineOuter()
 
                             self.content['bottomface'] = bottomface
                             self.content['topface'] = topface

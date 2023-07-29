@@ -82,153 +82,52 @@ def createTab():
     midY = (minP.y + maxP.y)/2
     midZ = (minP.z + maxP.z)/2
 
-    
-    # createTabNegativeYZ(tabY, tabZ, mainbody)
+    # # createTabNegativeYZ(tabY, tabZ, mainbody)
     def createTabYZ(tabY:float, tabZ:float, mainbody:BRepBody, startFrom:float):
         planes = activeSelection.rootComponent.constructionPlanes
         yzPlane = activeSelection.rootComponent.yZConstructionPlane
-        extrusionBody = None
-        extrusionSketch = None
-        extrusionOffsetPlane = None
-        for j in range (0, int((maxP.z - minP.z)/tabZ)):
-        # for j in range (0, 1):
-            # starting from 1/4 to 3/4
-            i = ((maxP.y - minP.y) / tabY) /4
-            while i < int((maxP.y - minP.y) / tabY) - ((maxP.y - minP.y) / tabY) /4:
-            # for i in range(1, 4):
-                #create a new sketch
-                planeInput = planes.createInput()
-                planeInput.setByOffset(yzPlane, ValueInput.createByReal(startFrom))
-                offsetPlane = planes.add(planeInput)
-                offsetSketch = activeSelection.rootComponent.sketches.add(offsetPlane)
-                lines = offsetSketch.sketchCurves.sketchLines
-                #locate the center of profile
-                yPos = i*tabY + minP.y
-                zPos = j*tabZ + tabZ/2 + maxP.z / 12
-                lines.addTwoPointRectangle(adsk.core.Point3D.create(-(zPos - tabZ/2), yPos - tabY/2, 0), adsk.core.Point3D.create(-(zPos + tabZ/2), yPos + tabY/2, 0))
-                # set up extrusion
-                extrudes = activeSelection.rootComponent.features.extrudeFeatures
-                prof = offsetSketch.profiles.item(offsetSketch.profiles.count - 1)
-                extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-                # Create a to-entity extent definition
-                isChained = True
-                extent_toentity = adsk.fusion.ToEntityExtentDefinition.create(mainbody, isChained)
-                # Set the one side extent with the to-entity-extent-definition, and with a taper angle of 0 degree
-                extrudeInput.setOneSideExtent(extent_toentity, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-                # Create an offset type start definition
-                start_offset = adsk.fusion.OffsetStartDefinition.create(ValueInput.createByReal(0))
-                # Set the start extent of the extrusion
-                extrudeInput.startExtent = start_offset
-                # Create the extrusion
-                try:
-                    extrude4 = extrudes.add(extrudeInput)
-                    body4 = extrude4.bodies.item(0)
-                    body4.name = "tab" + str(i)
-                    if extrusionBody == None:
-                        #very first tab of the row
-                        extrusionBody = body4
-                        extrusionSketch = offsetSketch
-                        extrusionOffsetPlane = offsetPlane
-                        if extrusionBody.volume / prof.areaProperties(adsk.fusion.CalculationAccuracy.LowCalculationAccuracy).area < 2:
-                            break
-                    else:
-                        if extrusionBody.volume < body4.volume:
-                            body4.deleteMe()
-                            offsetSketch.deleteMe()
-                            offsetPlane.deleteMe()
-                            i = i + 1
-                        else:
-                            extrusionBody.deleteMe()
-                            extrusionSketch.deleteMe()
-                            extrusionOffsetPlane.deleteMe()
-                            extrusionBody = body4
-                            extrusionSketch = offsetSketch
-                            extrusionOffsetPlane = offsetPlane
-                            if extrusionBody.volume / prof.areaProperties(adsk.fusion.CalculationAccuracy.LowCalculationAccuracy).area < 2:
-                                break
-                except Exception as e:
-                    print("Error occurred: ", e)
-                    timeline = design.timeline
-                    timelineObj = timeline.item(timeline.count - 3)
-                    timelineObj.rollTo(True)
-                    timeline.deleteAllAfterMarker()
-                    i = i + 1
-                    continue
+        #create a new sketch
+        planeInput = planes.createInput()
+        planeInput.setByOffset(yzPlane, ValueInput.createByReal(startFrom))
+        offsetPlane = planes.add(planeInput)
+        offsetSketch = activeSelection.rootComponent.sketches.add(offsetPlane)
+        lines = offsetSketch.sketchCurves.sketchLines
+        #locate the center of profile
+        yPos = midY
+        zPos = midZ
+        lines.addTwoPointRectangle(adsk.core.Point3D.create(-(zPos - tabZ/2), yPos - tabY/2, 0), adsk.core.Point3D.create(-(zPos + tabZ/2), yPos + tabY/2, 0))
+        # set up extrusion
+        extrudes = activeSelection.rootComponent.features.extrudeFeatures
+        prof = offsetSketch.profiles.item(offsetSketch.profiles.count - 1)
+        if startFrom == maxP.x:
+            extrudeResult = extrudes.addSimple(prof, ValueInput.createByReal(-(maxP.x - minP.x)/10), adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        else:
+            extrudeResult = extrudes.addSimple(prof, ValueInput.createByReal((maxP.x - minP.x)/10), adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        extrudeBody = extrudeResult.bodies.item(0)
+        extrudeBody.name = "tab"
 
-                #*******************super important line*****************
-                i = i + 1
-
-    # createTabNegativeYZ(tabY, tabZ, mainbody)
     def createTabXZ(tabX:float, tabZ:float, mainbody:BRepBody, startFrom:float):
         planes = activeSelection.rootComponent.constructionPlanes
         xzPlane = activeSelection.rootComponent.xZConstructionPlane
-        extrusionBody = None
-        extrusionSketch = None
-        extrusionOffsetPlane = None
-        for j in range (0, int((maxP.z - minP.z)/tabZ)):
-        # for j in range (0, 1):
-            i = ((maxP.x - minP.x) / tabX) / 4
-            while i < int((maxP.x - minP.x) / tabX) - ((maxP.x - minP.x) / tabX) / 4:
-            # for i in range(1, 4):
-                #create a new sketch
-                planeInput = planes.createInput()
-                planeInput.setByOffset(xzPlane, ValueInput.createByReal(startFrom))
-                offsetPlane = planes.add(planeInput)
-                offsetSketch = activeSelection.rootComponent.sketches.add(offsetPlane)
-                lines = offsetSketch.sketchCurves.sketchLines
-                #locate the center of profile
-                xPos = i*tabX + minP.x
-                zPos = j*tabZ + tabZ/2 + maxP.z / 12
-                lines.addTwoPointRectangle(adsk.core.Point3D.create((xPos - tabX/2), -(zPos - tabZ/2), 0), adsk.core.Point3D.create((xPos + tabX/2), -(zPos + tabZ/2), 0))
-                # # set up extrusion
-                extrudes = activeSelection.rootComponent.features.extrudeFeatures
-                prof = offsetSketch.profiles.item(offsetSketch.profiles.count - 1)
-                extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-                # Create a to-entity extent definition
-                isChained = True
-                extent_toentity = adsk.fusion.ToEntityExtentDefinition.create(mainbody, isChained)
-                # Set the one side extent with the to-entity-extent-definition, and with a taper angle of 0 degree
-                extrudeInput.setOneSideExtent(extent_toentity, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-                # Create an offset type start definition
-                start_offset = adsk.fusion.OffsetStartDefinition.create(ValueInput.createByReal(0))
-                # Set the start extent of the extrusion
-                extrudeInput.startExtent = start_offset
-                # Create the extrusion
-                try:
-                    extrude4 = extrudes.add(extrudeInput)
-                    body4 = extrude4.bodies.item(0)
-                    body4.name = "tab" + str(i)
-                    if extrusionBody == None:
-                        extrusionBody = body4
-                        extrusionSketch = offsetSketch
-                        extrusionOffsetPlane = offsetPlane
-                        if extrusionBody.volume / prof.areaProperties(adsk.fusion.CalculationAccuracy.LowCalculationAccuracy).area < 2:
-                            break
-                    else:
-                        if extrusionBody.volume <= body4.volume:
-                            body4.deleteMe()
-                            offsetSketch.deleteMe()
-                            offsetPlane.deleteMe()
-                            i = i + 1
-                        else:
-                            extrusionBody.deleteMe()
-                            extrusionSketch.deleteMe()
-                            extrusionOffsetPlane.deleteMe()
-                            extrusionBody = body4
-                            extrusionSketch = offsetSketch
-                            extrusionOffsetPlane = offsetPlane
-                            if extrusionBody.volume / prof.areaProperties(adsk.fusion.CalculationAccuracy.LowCalculationAccuracy).area < 2:
-                                break
-                except Exception as e:
-                    timeline = design.timeline
-                    timelineObj = timeline.item(timeline.count - 3)
-                    timelineObj.rollTo(True)
-                    timeline.deleteAllAfterMarker()
-                    i = i + 1
-                    continue
-
-                #*******************super important line*****************
-                i = i + 1
+        #create a new sketch
+        planeInput = planes.createInput()
+        planeInput.setByOffset(xzPlane, ValueInput.createByReal(startFrom))
+        offsetPlane = planes.add(planeInput)
+        offsetSketch = activeSelection.rootComponent.sketches.add(offsetPlane)
+        lines = offsetSketch.sketchCurves.sketchLines
+        #locate the center of profile
+        xPos = midX
+        zPos = midZ
+        lines.addTwoPointRectangle(adsk.core.Point3D.create((xPos - tabX/2), -(zPos - tabZ/2), 0), adsk.core.Point3D.create((xPos + tabX/2), -(zPos + tabZ/2), 0))
+        # # set up extrusion
+        extrudes = activeSelection.rootComponent.features.extrudeFeatures
+        prof = offsetSketch.profiles.item(offsetSketch.profiles.count - 1)
+        if startFrom == maxP.y:
+            extrudeResult = extrudes.addSimple(prof, ValueInput.createByReal(-(maxP.y - minP.y)/10), adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        else:
+            extrudeResult = extrudes.addSimple(prof, ValueInput.createByReal((maxP.y - minP.y)/10), adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        extrudeBody = extrudeResult.bodies.item(0)
+        extrudeBody.name = "tab"
 
     createTabYZ(tabY, tabZ, mainbody, maxP.x)
     createTabYZ(tabY, tabZ, mainbody, minP.x)
