@@ -184,7 +184,6 @@ class PropellerCAM:
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
                 param.itemByName('job_stockFixedZ').expression = mainStock_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
-
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
                 param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
                 
@@ -202,6 +201,8 @@ class PropellerCAM:
                 input.parameters.itemByName('tool_surfaceSpeed').expression = "1000 ft/min"
                 input.parameters.itemByName('tool_feedCutting').expression = "122.2 in/min"
                 input.parameters.itemByName('bottomHeight_mode').expression = "'from surface top'"
+                input.parameters.itemByName('doMultipleDepths').expression = "true"
+                input.parameters.itemByName('maximumStepdown').expression = "0.125 in"
 
                 # add the operation to the setup
                 faceOp = setup.operations.add(input)
