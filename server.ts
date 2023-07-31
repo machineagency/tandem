@@ -127,7 +127,7 @@ app.put('/overlay/command', (req, res) => {
     let cmd = req.body;
     if (!validateCommand(cmd)) {
         res.status(500).send({
-            message: 'Invalid overlay command.'
+            message: `Invalid overlay command: ${JSON.stringify(cmd)}`
         });
     }
     else {
@@ -417,7 +417,7 @@ app.get('/mill/state', (req, res) => {
     else {
         // TODO: explicitly prompt the shopbot server for fresh state,
         // rather than relying on the last retrieved state.
-        res.status(500).send(latestMillState);
+        res.status(200).send(latestMillState);
     }
 });
 
