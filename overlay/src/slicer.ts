@@ -30,8 +30,54 @@ interface Vec2 {
 };
 type Plane2Vecs = Vec2[];
 
-export function slice(irs: IR[]): SliceMap {
-    return {};
+export function slice(toolpath: IR[], depths: Depth[]): SliceMap {
+    let segments = toolpathSegments(toolpath);
+    let planes = makePlanesAtDepths(depths);
+    let intersectsPerDepth = planes.map((plane) => {
+        return [
+            plane.v.z,
+            segments.map(seg => findIntersect(seg, plane))
+        ];
+    });
+    let hullPerDepth = intersectsPerDepth.map((pair) => {
+        let depth = pair[0] as number;
+        let intersects = pair[1] as Intersect[];
+        let projectIntersect = (intersect: Intersect): Vec2 => {
+            // TODO: split on union type
+            return { x:0, y: 0};
+        };
+        let plane2Vecs = intersects.map(projectIntersect);
+        return [
+            depth,
+            findHull(plane2Vecs)
+        ]
+    });
+    let pathPerDepth = hullPerDepth.map(pair => {
+        let depth = pair[0] as number;
+        let hull = pair[1] as Plane2Vecs;
+        return [
+            depth,
+            makeSliceFromHull(hull)
+        ]
+    });
+    return Object.fromEntries(pathPerDepth);
+}
+
+function toolpathSegments(toolpath: IR[]): Segment3[] {
+    return [];
+}
+
+function makePlanesAtDepths(depths: Depth[]): Plane3[] {
+    function planeAtDepth(depth: Depth) {
+        return {
+            v: { x: 0, y: 0, z: depth },
+            n: {
+                v: { x: 0, y: 0, z: depth },
+                j: { x: 0, y: 0, z: depth + 1 }
+            }
+        };
+    }
+    return depths.map(planeAtDepth);
 }
 
 function findIntersect(seg: Segment3, plane: Plane3): Intersect {
