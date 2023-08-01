@@ -4,6 +4,7 @@ import * as paper from 'paper'
 type SliceMap = Record<Depth, Slice>;
 type Depth = number;
 type Slice = paper.Path;
+type SectionAxis = 'x' | 'y'
 
 interface Vec3 {
     x: number;
@@ -61,6 +62,18 @@ export function slice(toolpath: IR[], depths: Depth[]): SliceMap {
         ]
     });
     return Object.fromEntries(pathPerDepth);
+}
+
+/**
+ * Generates a 2D visualization of the 3D toolpath from the side. We generate
+ * this toolpath by projecting toolpath moves onto a vertical plane.
+ * @param toolpath A toolpath as represented by an array of IR objects.
+ * @param sectionAxis The axis ('x' or 'y') from which we view the toolpath.
+ * @returns A paper.js path representing the section.
+ */
+export function sideProfile(toolpath: IR[], sectionAxis: SectionAxis): paper.Path {
+    // TODO: Thrisha implement
+    return new paper.Path();
 }
 
 function toolpathSegments(toolpath: IR[]): Segment3[] {
