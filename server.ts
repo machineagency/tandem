@@ -392,7 +392,7 @@ app.get('/fusion360/sbp/:filename', (req, res) => {
             else {
                 let instructions = sbpFile.toString().split('\r\n');
                 res.status(200).send({
-                    instructions, generatedAt
+                    instructions, ageInHours
                 });
             }
         }
