@@ -104,11 +104,59 @@ export function sideProfile(toolpath: IR[], sectionAxis: SectionAxis): paper.Pat
 }
 
 function toolpathSegments(toolpath: IR[]): Segment3[] {
-    if (toolpath.length === 0) {
-        return [];
-    }
-    // TODO: borrow from basicViz
-    return [];
+    // The below code is adapted from Thrisha's basicViz.
+    let currentPos = { x: 0, y: 0, z: 0 };
+    let previousPos = { x: 0, y: 0, z: 0 };
+    let segments: Segment3[] = [];
+
+    toolpath.forEach((ir) => {
+      let newPos = {
+        x: ir.args.x || currentPos.x,
+        y: ir.args.y || currentPos.y,
+        z: ir.args.z || currentPos.z
+      };
+
+      // FIXME: we currently cheat and just turn arcs into two segments
+      if (ir.op === "arc" && ir.args.dx !== null && ir.args.dy !== null) {
+        // ending point of the arc is newPos
+        // current position should be the starting point of the arc
+
+        // calculate through point of the arc
+        let radius = Math.sqrt(Math.pow(ir.args.dx, 2) + Math.pow(ir.args.dy, 2));
+        let center = {
+            x: currentPos.x + ir.args.dx,
+            y: currentPos.y + ir.args.dy,
+            z: currentPos.z
+        };
+        let throughPt;
+        if (ir.state.clockwise === 1) {
+          throughPt = { x: center.x - radius, y: center.y, z: center.z };
+        } else {
+          throughPt = { x: center.x + radius, y: center.y, z: center.z };
+        }
+        let seg1 = {
+            v1: currentPos,
+            v2: throughPt
+        };
+        let seg2 = {
+            v1: throughPt,
+            v2: newPos
+        };
+        segments.push(seg1, seg2);
+      }
+
+      else {
+        let seg = {
+            v1: currentPos,
+            v2: newPos
+        }
+        segments.push(seg);
+      }
+
+      previousPos = currentPos;
+      currentPos = newPos;
+    });
+    return segments;
 }
 
 function makePlanesAtDepths(depths: Depth[]): Plane3[] {
