@@ -77,6 +77,10 @@ export function sideProfile(toolpath: IR[], sectionAxis: SectionAxis): paper.Pat
 }
 
 function toolpathSegments(toolpath: IR[]): Segment3[] {
+    if (toolpath.length === 0) {
+        return [];
+    }
+    // TODO: borrow from basicViz
     return [];
 }
 
@@ -91,6 +95,15 @@ function makePlanesAtDepths(depths: Depth[]): Plane3[] {
         };
     }
     return depths.map(planeAtDepth);
+}
+
+function filterSegments(segments: Segment3[], planeDepth: Depth) {
+    let judgeSegment = (s: Segment3): boolean => {
+        let upper = Math.max(s.v1.z, s.v2.z);
+        let lower = Math.min(s.v1.z, s.v2.z);
+        return planeDepth >= lower && planeDepth <= upper;
+    };
+    return segments.filter(judgeSegment);
 }
 
 function findIntersect(seg: Segment3, plane: Plane3): Intersect {
