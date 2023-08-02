@@ -24,6 +24,16 @@ interface Ray3 {
     j: Vec3;
 }
 type Intersect = Vec3 | Segment3;
+function intersectIsVec3(intersect: Intersect): intersect is Vec3 {
+    return intersect.hasOwnProperty('x')
+            && intersect.hasOwnProperty('y')
+            && intersect.hasOwnProperty('z');
+
+}
+function intersectIsSegment3(intersect: Intersect): intersect is Segment3 {
+    return intersect.hasOwnProperty('v1')
+            && intersect.hasOwnProperty('v2')
+}
 
 interface Vec2 {
     x: number;
@@ -43,11 +53,28 @@ export function slice(toolpath: IR[], depths: Depth[]): SliceMap {
     let hullPerDepth = intersectsPerDepth.map((pair) => {
         let depth = pair[0] as number;
         let intersects = pair[1] as Intersect[];
-        let projectIntersect = (intersect: Intersect): Vec2 => {
-            // TODO: split on union type
-            return { x:0, y: 0};
+        let projectIntersect = (intersect: Intersect): Vec2 | Vec2[] => {
+            if (intersectIsSegment3(intersect)) {
+                return [
+                    {
+                        x: intersect.v1.x,
+                        y: intersect.v1.y
+                    },
+                    {
+                        x: intersect.v2.x,
+                        y: intersect.v2.y
+                    }
+
+                ];
+            }
+            else {
+                return {
+                    x: intersect.x,
+                    y: intersect.y
+                }
+            }
         };
-        let plane2Vecs = intersects.map(projectIntersect);
+        let plane2Vecs = intersects.map(projectIntersect).flat();
         return [
             depth,
             findHull(plane2Vecs)
