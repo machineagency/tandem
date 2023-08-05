@@ -15,10 +15,10 @@ export class OverlayRoot {
 
   // inches
   groundTruth = {
-    height: 16.00,
-    width: 16.75,
-    offsetX: 1.00,
-    offsetY: 0.75
+    height: 15.875,
+    width: 16.625,
+    offsetX: 1.09375,
+    offsetY: 0.625
   };
 
   scaleFactor = 20;
