@@ -51,8 +51,7 @@ export interface Mark {
 };
 
 export interface Arrow extends Mark {
-    width: number;
-    height: number;
+    to: { x: number, y: number };
     type: 'arrow';
 };
   
