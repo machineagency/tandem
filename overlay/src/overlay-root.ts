@@ -226,11 +226,12 @@ export class OverlayRoot {
 
     for (let i = 0; i !== irs.length; i++) {
       let ir = irs[i];
-      if (!first && ir.args.x !== 0 && ir.args.y !== 0 && ir.args.x !== null && ir.args.y !== null) {
+      if (!first && ir.args.x !== null && ir.args.x > 0 && ir.args.y !== 0 && ir.args.y !== null) {
         p1 = new this.ps.Point(ir.args.x * this.scaleFactor, ir.args.y * this.scaleFactor);
         console.log(p1);
         first = true;
-      } if (!second && ir.args.x !== null && ir.args.x < 0 && ir.args.y !== null) {
+      } 
+      if (!second && ir.args.x !== null && ir.args.x < 0 && ir.args.y !== null) {
         p2 = new this.ps.Point(ir.args.x * this.scaleFactor, ir.args.y * this.scaleFactor);
         console.log(p2);
         second = true;
@@ -256,7 +257,7 @@ export class OverlayRoot {
     console.log(circle2);
     group.addChild(circle1);
     group.addChild(circle2);
-    
+
     return group;
   }
 
@@ -325,7 +326,7 @@ export class OverlayRoot {
 
     // add dashed line for bottom of drill bit
     let drillLine = new paper.Path.Line(new this.ps.Point(startX, stockBottomY + modelDepth), new this.ps.Point(startX + 2, stockBottomY + modelDepth));
-    drillLine.strokeColor = new paper.Color('pink');
+    drillLine.strokeColor = new paper.Color('green');
     drillLine.dashArray = [1, 2];
     drillLine.strokeWidth = 0.75;
 
@@ -608,6 +609,7 @@ export class OverlayRoot {
     let xSize = 4;
     // offset of the screw from corner of the stock
     let offset = mark.offset;
+    let flipped = mark.flipped;
 
     // let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
     let bottomLeft = new this.ps.Point(mark.location.x * this.scaleFactor, mark.location.y * this.scaleFactor);

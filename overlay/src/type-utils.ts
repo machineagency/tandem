@@ -96,6 +96,7 @@ export interface ScrewPosition extends Mark {
     height: number;
     offset: number;
     type: 'screwPosition';
+    flipped: number;
 }
 export interface SectionAnnotation extends Mark {
     type: 'sectionAnnotation';
