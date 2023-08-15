@@ -15,10 +15,10 @@ export class OverlayRoot {
 
   // inches
   groundTruth = {
-    height: 16.00,
-    width: 16.75,
-    offsetX: 1.00,
-    offsetY: 0.75
+    height: 15.875,
+    width: 16.625,
+    offsetX: 1.09375,
+    offsetY: 0.625
   };
 
   scaleFactor = 20;
@@ -108,8 +108,7 @@ export class OverlayRoot {
   compileMark(mark: Mark): paper.Group {
     switch (mark.type) {
       case 'arrow':
-        // TODO
-        break;
+        return this.generateArrow(mark as Arrow);
       case 'crosshair':
         return this.generateCrosshair(mark as Crosshair);
       case 'box':
@@ -504,6 +503,26 @@ export class OverlayRoot {
       originalBox: origBox,
       children: [box]
     });
+  }
+
+  generateArrow(mark: Arrow): paper.Group {
+    let line = new this.ps.Path.Line({
+      from: [
+        mark.location.x * this.scaleFactor,
+        mark.location.y * this.scaleFactor
+      ],
+      to: [
+        mark.to.x * this.scaleFactor,
+        mark.to.y * this.scaleFactor
+      ],
+      strokeWidth: 2,
+      strokeColor: 'yellow',
+      dashArray: [10, 4]
+    });
+    // TODO: add arrowhead
+    let group = new this.ps.Group();
+    group.addChild(line);
+    return group;
   }
 
   generateCrosshair(mark: Crosshair): paper.Group {

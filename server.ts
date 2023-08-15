@@ -375,12 +375,26 @@ app.put('/fusion360/command', (req, res) => {
 
 app.get('/fusion360/sbp/:filename', (req, res) => {
     try {
-        let sbpFile = fs.readFileSync(`./fusion360/${req.params.filename}.sbp`);
+        let path = `./fusion360/${req.params.filename}.sbp`;
+        let sbpFile = fs.readFileSync(path);
+        let stats = fs.statSync(path);
         if (sbpFile) {
-            let instructions = sbpFile.toString().split('\r\n');
-            res.status(200).send({
-                instructions
-            });
+            let generatedAt = stats.ctimeMs;
+            let msToHours = 2.77778e-7;
+            let ageInHours = (Date.now() - generatedAt) * msToHours;
+            let maxHourThreshold = 1;
+            if (ageInHours > maxHourThreshold) {
+                res.status(500).send({
+                    message: `The toolpath is ${ageInHours} hour(s) old, over the limit`
+                              + ` of ${maxHourThreshold} hour(s) old. Please regenerate.`
+                });
+            }
+            else {
+                let instructions = sbpFile.toString().split('\r\n');
+                res.status(200).send({
+                    instructions, ageInHours
+                });
+            }
         }
     }
     catch {

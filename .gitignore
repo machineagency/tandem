@@ -3,6 +3,9 @@
 node_modules/
 build/
 
+*.vscode
+*__pycache__
+
 config/*
 !config/placeholder.txt
 !config/millproject
@@ -19,3 +22,4 @@ overlay/public/latest-svg.svg
 
 fusion360/*.svg
 fusion360/*.sbp
+fusion360/notebook-bridge/.*
