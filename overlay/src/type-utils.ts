@@ -7,8 +7,8 @@ export type Operation = 'move' | 'arc';
 
 export type StepStatus = 'standby' |'step' | 'calibration';
 export type MarkType = 'arrow' | 'crosshair' | 'box' | 'circle' | 'text' | 'svg'
-                | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation' | 'boxOutline';
-export type TSSName = 'basic' | 'bore';
+                | 'calibrationBox' | 'toolpath' | 'screwPosition' | 'sectionAnnotation' | 'boxOutline' | 'flipStock';
+export type TSSName = 'basic' | 'bore' | 'outline';
 export type SectionAnnotationName = 'screwDepth' | 'passDepths';
 export type ToolType = 'face' | 'ball';
 
@@ -70,6 +70,12 @@ export interface BoxOutline extends Mark {
     height: number;
     type: 'boxOutline'
 };
+
+export interface FlipStock extends Mark {
+    width: number;
+    height: number;
+    type: 'flipStock'
+};
   
 export interface Circle extends Mark {
     radius: number;
@@ -95,7 +101,6 @@ export interface ScrewPosition extends Mark {
     height: number;
     offset: number;
     type: 'screwPosition';
-    flipped: number;
 }
 export interface SectionAnnotation extends Mark {
     type: 'sectionAnnotation';

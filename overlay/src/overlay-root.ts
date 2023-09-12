@@ -1,6 +1,6 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction, ToolType } from './type-utils'
+import { IR, FlipStock, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
@@ -115,6 +115,10 @@ export class OverlayRoot {
         return this.generateBox(mark as Box);
       case 'boxOutline':
         return this.generateBoxOutline(mark as BoxOutline);
+      /*
+      case 'flipStock':
+        return this.vizFlipStock(mark as FlipStock);
+      */
       case 'circle':
         return this.generateCircle(mark as Circle);
       case 'text':
@@ -159,6 +163,9 @@ export class OverlayRoot {
         break;
       case 'bore':
         group = this.boreVis(irs, toolpath.dowelDiam);
+        break;
+      case 'outline':
+        group = this.outlineVis(irs);
         break;
     }
     group.position = new this.ps.Point(toolpath.location.x * this.scaleFactor, toolpath.location.y * this.scaleFactor);
@@ -256,6 +263,35 @@ export class OverlayRoot {
     console.log(circle2);
     group.addChild(circle1);
     group.addChild(circle2);
+
+    return group;
+  }
+
+  outlineVis(irs: IR[]): paper.Group {
+    let path = new this.ps.Path();
+    let group = new paper.Group();
+    group.name = 'toolpath';
+
+    let currentPos = new this.ps.Point(0, 0);
+    let previousPos = new this.ps.Point(0, 0);
+    
+    irs.forEach( (ir) => {
+      let newPos = new this.ps.Point(
+        ir.args.x || currentPos.x,
+        ir.args.y || currentPos.y
+      );
+
+      if (currentPos.getDistance(previousPos) > Number.EPSILON) {
+        path.add(newPos);
+      }
+      
+      previousPos = currentPos;
+      currentPos = newPos;
+    });
+
+    group.addChild(path);
+    group.scale(this.scaleFactor);
+    group.strokeColor = new paper.Color('green');
 
     return group;
   }
@@ -585,6 +621,12 @@ export class OverlayRoot {
     });
   }
 
+  /*
+  vizFlipStock(mark: FlipStock): paper.Group {
+    let ll = new this.ps.Point(mark.location.x, mark.location.y);
+    let lr = new this.ps.Point()
+  }*/
+
   generateText(mark: Text): paper.Group {
     let text = new this.ps.PointText({
       point: [
@@ -628,7 +670,6 @@ export class OverlayRoot {
     let xSize = 4;
     // offset of the screw from corner of the stock
     let offset = mark.offset;
-    let flipped = mark.flipped;
 
     // let bottomLeft = new this.ps.Point(box.bounds.topLeft.x, box.bounds.topLeft.y);
     let bottomLeft = new this.ps.Point(mark.location.x * this.scaleFactor, mark.location.y * this.scaleFactor);
