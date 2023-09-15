@@ -72,7 +72,7 @@ class PropellerCAM:
                 setupInput = setups.createInput(adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
@@ -119,22 +119,22 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('foamSurface', setups)
+            setup = getSetup('reduceThickness', setups)
             if setup == None:
-                #################### create setup foamSurface ####################
+                #################### create setup reduceThickness ####################
                 cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
                 setups = cam.setups
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'foamSurface'
+                setupInput.name = 'reduceThickness'
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
@@ -179,22 +179,22 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('foamBore', setups)
+            setup = getSetup('mainHoles', setups)
             if setup == None:
-                #################### create setup foamBore ####################
+                #################### create setup mainHoles ####################
                 cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
                 setups = cam.setups
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'foamBore'
+                setupInput.name = 'mainHoles'
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
@@ -231,7 +231,7 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('topCut', setups)
+            setup = getSetup('topDown', setups)
             if setup == None:
                 #################### create setup TopCut ####################
                 cam = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
@@ -241,13 +241,13 @@ class PropellerCAM:
                 # create a list for the models to add to the setup Input
                 models = []
                 # find the component occurrence called top-down
-                top_down = recursivelyFindOccurences(cam.designRootOccurrence, "top-down:1")
+                top_down = recursivelyFindOccurences(cam.designRootOccurrence, "artifact")
                 for bodies in top_down.bRepBodies:
                     models.append(bodies)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'topCut'
+                setupInput.name = 'topDown'
                 
                 setup = setups.add(setupInput)
                 param = setup.parameters
@@ -293,7 +293,7 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('bottomCut', setups)
+            setup = getSetup('bottomUp', setups)
             if setup == None:
                 #################### create setup BottomCut ####################
                 setupInput = setups.createInput(
@@ -312,7 +312,7 @@ class PropellerCAM:
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'bottomCut'
+                setupInput.name = 'bottomUp'
                 
                 setup = setups.add(setupInput)
                 param = setup.parameters

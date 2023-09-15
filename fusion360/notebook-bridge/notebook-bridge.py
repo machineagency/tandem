@@ -110,16 +110,16 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
             if maybeResponse and maybeResponse.status == 200:  # Check if the request was successful
                 response_json = maybeResponse.json()  # Load JSON data from response
                 new_status = response_json.get('status')
-                new_params = response_json.get('create_param')
-                new_cam_setup = response_json.get('setup_cam')
+                new_params = response_json.get('createParam')
+                new_cam_setup = response_json.get('setupCam')
                 new_generate_svg = response_json.get('generate_svg')
-                new_export_sbp = response_json.get('export_sbp')
+                new_exportSbp = response_json.get('exportSbp')
                 new_create_outer = response_json.get('create_outer')
 
                 if(new_status != 'standby'):
                     if self.content.get('create_outer') != new_create_outer:
                         self.content['create_outer'] = new_create_outer
-                        if new_create_outer and (not recursivelyFindBody("outer-SPOIL")):
+                        if new_create_outer and (not recursivelyFindBody("outer")):
                             bottomface, topface = createOuter()
                             innerBtmLoopEdgeCount = bottomface.loops.item(0).edges.count
                             innerLoopEdgeCount = topface.loops.item(0).edges.count
@@ -132,28 +132,28 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                             self.content['innerLoopEdgeCount'] = innerLoopEdgeCount
                             self.content['holeFaces'] = holeFaces
                             
-                    # Check if 'create_param' is the same, if not, update and execute.
-                    if self.content.get('create_param') != new_params:
-                        self.content['create_param'] = new_params
+                    # Check if 'createParam' is the same, if not, update and execute.
+                    if self.content.get('createParam') != new_params:
+                        self.content['createParam'] = new_params
                         if new_params:
                             for param in new_params:
                                 create_user_parameter(param.get("name"), param.get("value"), param.get("unit"))
 
-                    # Check if 'setup_cam' is the same, if not, update and execute.
-                    if self.content.get('setup_cam') != new_cam_setup:
+                    # Check if 'setupCam' is the same, if not, update and execute.
+                    if self.content.get('setupCam') != new_cam_setup:
                         cam = PropellerCAM()
-                        self.content['setup_cam'] = new_cam_setup
+                        self.content['setupCam'] = new_cam_setup
                         if new_cam_setup:
                             for setup in new_cam_setup:
                                 if setup == "alignmentJig":
                                     cam.create_alignmentJig(self.content['holeFaces'])
-                                elif setup == "foamSurface":
+                                elif setup == "reduceThickness":
                                     cam.create_foam_surface()
-                                elif setup == "foamBore":
+                                elif setup == "mainHoles":
                                     cam.create_foam_bore(self.content['holeFaces'])
-                                elif setup == "topCut":
+                                elif setup == "topDown":
                                     cam.create_top_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['topface']))
-                                elif setup == "bottomCut":
+                                elif setup == "bottomUp":
                                     cam.create_bottom_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['bottomface']))
 
                     # Check if 'generate_svg' is the same, if not, update and execute.
@@ -162,17 +162,17 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                         if new_generate_svg:
                             exportSVG()
                             
-                    if self.content.get('export_sbp') != new_export_sbp:
-                        self.content['export_sbp'] = new_export_sbp
-                        if new_export_sbp:
-                            for setupName in new_export_sbp:
+                    if self.content.get('exportSbp') != new_exportSbp:
+                        self.content['exportSbp'] = new_exportSbp
+                        if new_exportSbp:
+                            for setupName in new_exportSbp:
                                 exportSBPWithSetupNamed(setupName)
                 else:
-                    self.content['setup_cam'] = None
+                    self.content['setupCam'] = None
                     self.content['generate_svg'] = None
-                    self.content['export_sbp'] = None
-                    self.content['setup_cam'] = None
-                    self.content['create_param'] = None
+                    self.content['exportSbp'] = None
+                    self.content['setupCam'] = None
+                    self.content['createParam'] = None
                     self.content['create_outer'] = None
 
 

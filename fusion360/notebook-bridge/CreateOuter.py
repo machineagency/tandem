@@ -16,9 +16,9 @@ def createOuter():
     try:
         # Get the root component of the active design.
         zDistance = design.userParameters.itemByName('propellerHeight')
-        # body:adsk.fusion.Occurrence = recursivelyFindbRepBodies(activeSelection.activeOccurrence, 'top-down:1')
+        # body:adsk.fusion.Occurrence = recursivelyFindbRepBodies(activeSelection.activeOccurrence, 'artifact')
         # body.boundingBox
-        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
@@ -50,7 +50,7 @@ def createOuter():
 
         # Create the extrusion.
         ext = extrudes.add(extInput)
-        ext.bodies.item(0).name = "outer-SPOIL"
+        ext.bodies.item(0).name = "outer"
         
         # Get the end face of the extrusion
         endFace = ext.endFaces.item(0)
@@ -64,7 +64,7 @@ def createOuter():
 
 
 def createTab():
-    mainbody = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+    mainbody = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
     minP = mainbody.boundingBox.minPoint
     maxP = mainbody.boundingBox.maxPoint
     minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
@@ -136,7 +136,7 @@ def createTab():
 
 def combineOuter():
     combineFeatures = design.activeComponent.features.combineFeatures
-    targetBody = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+    targetBody = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
     toolBodies = FindTabs(activeSelection.rootComponent)
     combineFeatureInput = combineFeatures.createInput(targetBody, toolBodies)
     combineFeatureInput.operation = 0
@@ -155,7 +155,7 @@ def holeDrill(holeDrillingFace):
         # set up parameters
         dowelDiam = design.userParameters.itemByName('dowelDiam')
         zDistance = design.userParameters.itemByName('propellerHeight')
-        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
