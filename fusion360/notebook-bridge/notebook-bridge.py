@@ -143,14 +143,15 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                     if self.content.get('setupCam') != new_cam_setup:
                         cam = PropellerCAM()
                         self.content['setupCam'] = new_cam_setup
+                        maybeHoleFaces = self.content['holeFaces'] if 'holeFaces' in self.content else None
                         if new_cam_setup:
                             for setup in new_cam_setup:
                                 if setup == "alignmentJig":
-                                    cam.create_alignmentJig(self.content['holeFaces'])
+                                    cam.create_alignmentJig(maybeHoleFaces)
                                 elif setup == "reduceThickness":
                                     cam.create_foam_surface()
                                 elif setup == "mainHoles":
-                                    cam.create_foam_bore(self.content['holeFaces'])
+                                    cam.create_foam_bore(maybeHoleFaces)
                                 elif setup == "topDown":
                                     cam.create_top_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['topface']))
                                 elif setup == "bottomUp":

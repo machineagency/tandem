@@ -14,8 +14,14 @@ activeSelection = adsk.fusion.Design.cast(design)
 
 def createOuter():
     try:
+        # define common tools
+        app = adsk.core.Application.get()
+        ui = app.userInterface
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        activeSelection = adsk.fusion.Design.cast(design)
+
         # Get the root component of the active design.
-        zDistance = design.userParameters.itemByName('propellerHeight')
+        zDistance = design.userParameters.itemByName('artifactHeight')
         # body:adsk.fusion.Occurrence = recursivelyFindbRepBodies(activeSelection.activeOccurrence, 'artifact')
         # body.boundingBox
         body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
@@ -24,9 +30,9 @@ def createOuter():
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
         maxP.set(maxP.x + tabLength, maxP.y + tabLength, maxP.z)
         
-        setUserParamter(design, "propellerHeight", maxP.z - minP.z, 'inch')
+        setUserParamter(design, "artifactHeight", maxP.z - minP.z, 'inch')
             
-        zDistance = design.userParameters.itemByName('propellerHeight').value
+        zDistance = design.userParameters.itemByName('artifactHeight').value
 
         # sketches = rootComp.sketches
         xyPlane = activeSelection.rootComponent.xYConstructionPlane
@@ -153,8 +159,9 @@ def combineOuter():
 def holeDrill(holeDrillingFace):
     try:
         # set up parameters
+        design = adsk.fusion.Design.cast(app.activeProduct)
         dowelDiam = design.userParameters.itemByName('dowelDiam')
-        zDistance = design.userParameters.itemByName('propellerHeight')
+        zDistance = design.userParameters.itemByName('artifactHeight')
         body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
