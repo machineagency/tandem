@@ -14,7 +14,7 @@ To use Tandem, install this backend and open up the notebook to begin following 
 
 To browse the notebook *without acutally using its functionality*, simply navigate to the notebook on Observable and follow the instructions there. No installation is required in that case. If you wish to replicate the process on your own setup, follow the instructions below.
 
->>> **[Notebook frontend on Observable](https://observablehq.com/@machine-agency/two-sided-milling)** <<<
+**[Notebook frontend on Observable](https://observablehq.com/@machine-agency/two-sided-milling)**
 
 ## Installation
 
