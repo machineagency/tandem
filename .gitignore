@@ -23,3 +23,5 @@ overlay/public/latest-svg.svg
 fusion360/*.svg
 fusion360/*.sbp
 fusion360/notebook-bridge/.*
+
+*/__pycache__
