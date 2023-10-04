@@ -14,19 +14,25 @@ activeSelection = adsk.fusion.Design.cast(design)
 
 def createOuter():
     try:
+        # define common tools
+        app = adsk.core.Application.get()
+        ui = app.userInterface
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        activeSelection = adsk.fusion.Design.cast(design)
+
         # Get the root component of the active design.
-        zDistance = design.userParameters.itemByName('propellerHeight')
-        # body:adsk.fusion.Occurrence = recursivelyFindbRepBodies(activeSelection.activeOccurrence, 'top-down:1')
+        zDistance = design.userParameters.itemByName('artifactHeight')
+        # body:adsk.fusion.Occurrence = recursivelyFindbRepBodies(activeSelection.activeOccurrence, 'artifact')
         # body.boundingBox
-        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
         maxP.set(maxP.x + tabLength, maxP.y + tabLength, maxP.z)
         
-        setUserParamter(design, "propellerHeight", maxP.z - minP.z, 'inch')
+        setUserParamter(design, "artifactHeight", maxP.z - minP.z, 'inch')
             
-        zDistance = design.userParameters.itemByName('propellerHeight').value
+        zDistance = design.userParameters.itemByName('artifactHeight').value
 
         # sketches = rootComp.sketches
         xyPlane = activeSelection.rootComponent.xYConstructionPlane
@@ -50,7 +56,7 @@ def createOuter():
 
         # Create the extrusion.
         ext = extrudes.add(extInput)
-        ext.bodies.item(0).name = "outer-SPOIL"
+        ext.bodies.item(0).name = "outer"
         
         # Get the end face of the extrusion
         endFace = ext.endFaces.item(0)
@@ -64,7 +70,7 @@ def createOuter():
 
 
 def createTab():
-    mainbody = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+    mainbody = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
     minP = mainbody.boundingBox.minPoint
     maxP = mainbody.boundingBox.maxPoint
     minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
@@ -136,7 +142,7 @@ def createTab():
 
 def combineOuter():
     combineFeatures = design.activeComponent.features.combineFeatures
-    targetBody = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+    targetBody = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
     toolBodies = FindTabs(activeSelection.rootComponent)
     combineFeatureInput = combineFeatures.createInput(targetBody, toolBodies)
     combineFeatureInput.operation = 0
@@ -153,9 +159,10 @@ def combineOuter():
 def holeDrill(holeDrillingFace):
     try:
         # set up parameters
+        design = adsk.fusion.Design.cast(app.activeProduct)
         dowelDiam = design.userParameters.itemByName('dowelDiam')
-        zDistance = design.userParameters.itemByName('propellerHeight')
-        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "top-down:1")
+        zDistance = design.userParameters.itemByName('artifactHeight')
+        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)

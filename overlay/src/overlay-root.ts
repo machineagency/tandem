@@ -14,11 +14,18 @@ export class OverlayRoot {
   // TODO: a section view
 
   // inches
+  // groundTruth = {
+  //   height: 30.5,
+  //   width: 51.875,
+  //   offsetX: 0,
+  //   offsetY: 0
+  // };
+
   groundTruth = {
-    height: 15.875,
-    width: 16.625,
-    offsetX: 1.09375,
-    offsetY: 0.625
+    height: 16.25,
+    width: 17,
+    offsetX: 0.75,
+    offsetY: 0.25
   };
 
   scaleFactor = 20;

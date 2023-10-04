@@ -72,14 +72,14 @@ class PropellerCAM:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
             setup = getSetup('alignmentJig', setups)
-            jigStock_x = self.design.userParameters.itemByName("jigStock_x").expression
-            jigStock_y = self.design.userParameters.itemByName("jigStock_y").expression
-            jigStock_z = self.design.userParameters.itemByName("jigStock_z").expression
+            jigWorkpiece_x = self.design.userParameters.itemByName("jigWorkpiece_x").expression
+            jigWorkpiece_y = self.design.userParameters.itemByName("jigWorkpiece_y").expression
+            jigWorkpiece_z = self.design.userParameters.itemByName("jigWorkpiece_z").expression
             if(setup == None):
                 setupInput = setups.createInput(adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
@@ -90,13 +90,13 @@ class PropellerCAM:
                 param = setupInput.parameters
                 # set offset mode
                 
-                param.itemByName('job_stockFixedX').expression = jigStock_x
+                param.itemByName('job_stockFixedX').expression = jigWorkpiece_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedY').expression = jigStock_y
+                param.itemByName('job_stockFixedY').expression = jigWorkpiece_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
 
-                param.itemByName('job_stockFixedZ').expression = jigStock_z
+                param.itemByName('job_stockFixedZ').expression = jigWorkpiece_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
 
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
@@ -145,7 +145,8 @@ class PropellerCAM:
                 cam.generateToolpath(boreOp)
  
         except:
-            pass
+            if self.ui:
+                self.ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
             
             
     def create_foam_surface(self):
@@ -153,24 +154,23 @@ class PropellerCAM:
         try:
             
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
-            
             setups = cam.setups
-            setup = getSetup('foamSurface', setups)
-            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
-            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
-            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
+            setup = getSetup('reduceThickness', setups)
+            mainWorkpiece_x = self.design.userParameters.itemByName("mainWorkpiece_x").expression
+            mainWorkpiece_y = self.design.userParameters.itemByName("mainWorkpiece_y").expression
+            mainWorkpiece_z = self.design.userParameters.itemByName("mainWorkpiece_z").expression
             if setup == None:
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'foamSurface'
+                setupInput.name = 'reduceThickness'
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
@@ -178,11 +178,11 @@ class PropellerCAM:
                 setupInput.stockMode = adsk.cam.SetupStockModes.FixedBoxStock
                 param.itemByName('job_stockMode').expression = "'fixedbox'"
                 
-                param.itemByName('job_stockFixedX').expression = mainStock_x
+                param.itemByName('job_stockFixedX').expression = mainWorkpiece_x
                 param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = mainStock_y
+                param.itemByName('job_stockFixedY').expression = mainWorkpiece_y
                 param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = mainStock_z
+                param.itemByName('job_stockFixedZ').expression = mainWorkpiece_z
                 param.itemByName('job_stockFixedZMode').expression = "'bottom'"
                 param.itemByName('job_stockFixedZOffset').expression = '0 in'
                 param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
@@ -215,37 +215,32 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('foamBore', setups)
-            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
-            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
-            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
-            propellerHeight = self.design.userParameters.itemByName('propellerHeight').expression
+            setup = getSetup('mainHoles', setups)
+            mainWorkpiece_x = self.design.userParameters.itemByName("mainWorkpiece_x").expression
+            mainWorkpiece_y = self.design.userParameters.itemByName("mainWorkpiece_y").expression
+            mainWorkpiece_z = self.design.userParameters.itemByName("mainWorkpiece_z").expression
+            artifactHeight = self.design.userParameters.itemByName('artifactHeight').expression
             if setup == None:
-                #################### create setup foamBore ####################
+                #################### create setup mainHoles ####################
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
-                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer-SPOIL")
+                part = recursivelyFindbRepBodies(cam.designRootOccurrence, "outer")
                 # add the part to the model list
                 models.append(part)
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'foamBore'
+                setupInput.name = 'mainHoles'
                 setup = setups.add(setupInput)
                 param = setup.parameters
                 # set offset mode
 
                 #properllerHeight
-                param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = mainStock_x
-                param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = mainStock_y
-                param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = propellerHeight
-                param.itemByName('job_stockFixedZMode').expression = "'center'"
-                param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
+
+                param.itemByName('job_stockMode').expression = "'default'"
+                param.itemByName('job_stockOffsetMode').expression = "'keep'"
 
                 
 
@@ -280,18 +275,18 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('topCut', setups)
-            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
-            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
-            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
-            propellerHeight = self.design.userParameters.itemByName("propellerHeight").expression
+            setup = getSetup('topDown', setups)
+            mainWorkpiece_x = self.design.userParameters.itemByName("mainWorkpiece_x").expression
+            mainWorkpiece_y = self.design.userParameters.itemByName("mainWorkpiece_y").expression
+            mainWorkpiece_z = self.design.userParameters.itemByName("mainWorkpiece_z").expression
+            artifactHeight = self.design.userParameters.itemByName("artifactHeight").expression
             if setup == None:
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
                 # create a list for the models to add to the setup Input
                 models = []
                 # find the component occurrence called top-down
-                top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "top-down:1")
+                top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "artifact")
                 if(top_down.objectType == "adsk::fusion::BRepBody"):
                     models.append(top_down)
                 elif(top_down.objectType == "adsk::fusion::Occurrence"):
@@ -300,7 +295,7 @@ class PropellerCAM:
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'topCut'
+                setupInput.name = 'topDown'
                 
                 setup = setups.add(setupInput)
                 param = setup.parameters
@@ -308,14 +303,8 @@ class PropellerCAM:
         
         
                 # set offset mode
-                param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = mainStock_x
-                param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = mainStock_y
-                param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = propellerHeight 
-                param.itemByName('job_stockFixedZMode').expression = "'center'"
-                param.itemByName('job_stockFixedRoundingValue').expression = '0.5 in'
+                param.itemByName('job_stockMode').expression = "'default'"
+                param.itemByName('job_stockOffsetMode').expression = "'keep'"
         
 
 
@@ -371,11 +360,11 @@ class PropellerCAM:
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
-            setup = getSetup('bottomCut', setups)
-            mainStock_x = self.design.userParameters.itemByName("mainStock_x").expression
-            mainStock_y = self.design.userParameters.itemByName("mainStock_y").expression
-            mainStock_z = self.design.userParameters.itemByName("mainStock_z").expression
-            propellerHeight = self.design.userParameters.itemByName("propellerHeight").expression
+            setup = getSetup('bottomUp', setups)
+            mainWorkpiece_x = self.design.userParameters.itemByName("mainWorkpiece_x").expression
+            mainWorkpiece_y = self.design.userParameters.itemByName("mainWorkpiece_y").expression
+            mainWorkpiece_z = self.design.userParameters.itemByName("mainWorkpiece_z").expression
+            artifactHeight = self.design.userParameters.itemByName("artifactHeight").expression
             if setup == None:
                 #################### create setup BottomCut ####################
                 setupInput = setups.createInput(
@@ -383,7 +372,7 @@ class PropellerCAM:
                 # create a list for the models to add to the setup Input
                 models = []
                 
-                flipped_top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "top-down:1")
+                flipped_top_down = recursivelyFindbRepBodies(cam.designRootOccurrence, "artifact")
                 if(flipped_top_down.objectType == "adsk::fusion::BRepBody"):
                     models.append(flipped_top_down)
                 elif(flipped_top_down.objectType == "adsk::fusion::Occurrence"):
@@ -393,19 +382,13 @@ class PropellerCAM:
                 # pass the model list to the setup input
                 setupInput.models = models
                 # change some setup properties
-                setupInput.name = 'bottomCut'
+                setupInput.name = 'bottomUp'
                 setup = setups.add(setupInput)
                 param = setup.parameters
                     
                 # set offset mode
-                param.itemByName('job_stockMode').expression = "'fixedbox'"
-                param.itemByName('job_stockFixedX').expression = mainStock_x
-                param.itemByName('job_stockFixedXMode').expression = "'center'"
-                param.itemByName('job_stockFixedY').expression = mainStock_y
-                param.itemByName('job_stockFixedYMode').expression = "'center'"
-                param.itemByName('job_stockFixedZ').expression = propellerHeight
-                param.itemByName('job_stockFixedZMode').expression = "'center'"
-                param.itemByName('job_stockFixedRoundingValue').expression = '0 in'
+                param.itemByName('job_stockMode').expression = "'default'"
+                param.itemByName('job_stockOffsetMode').expression = "'keep'"
                 param.itemByName('wcs_orientation_mode').expression = "'axesZY'"
                 param.itemByName('wcs_orientation_flipY').expression = 'true'
                 param.itemByName('wcs_orientation_flipZ').expression = 'true'
