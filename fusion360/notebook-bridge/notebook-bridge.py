@@ -141,7 +141,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
 
                     # Check if 'setupCam' is the same, if not, update and execute.
                     if self.content.get('setupCam') != new_cam_setup:
-                        cam = PropellerCAM()
+                        cam = SetupMaker()
                         self.content['setupCam'] = new_cam_setup
                         maybeHoleFaces = self.content['holeFaces'] if 'holeFaces' in self.content else None
                         if new_cam_setup:

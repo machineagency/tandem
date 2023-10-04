@@ -5,7 +5,7 @@ import adsk.core, adsk.fusion, adsk.cam, traceback
 
 
 
-class PropellerCAM:
+class SetupMaker:
 
     def __init__(self):
         self.app = adsk.core.Application.get()
