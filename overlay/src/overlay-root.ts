@@ -166,9 +166,10 @@ export class OverlayRoot {
         break;
       case 'outline':
         group = this.outlineVis(irs);
+        group.position = this.ps.view.center;
         break;
     }
-    group.position = new this.ps.Point(toolpath.location.x * this.scaleFactor, toolpath.location.y * this.scaleFactor);
+    //group.position = new this.ps.Point(toolpath.location.x * this.scaleFactor, toolpath.location.y * this.scaleFactor);
     return group;
   }  
 
@@ -290,7 +291,7 @@ export class OverlayRoot {
     });
 
     group.addChild(path);
-    group.scale(this.scaleFactor);
+    group.scale(this.scaleFactor * 5);
     group.strokeColor = new paper.Color('green');
 
     return group;
