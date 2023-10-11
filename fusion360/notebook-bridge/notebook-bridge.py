@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 from .CreateUserParameter import *
 from .CreateOuter import *
-from .PropellerCAM import *
+from .SetupMaker import *
 from . ExportSVG import *
 from . PostProcess import *
 from email.message import Message

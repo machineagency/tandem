@@ -308,10 +308,10 @@ class SetupMaker:
         
 
 
-                #################### adaptive operation ####################
+                #################### pocket operation ####################
                 input = setup.operations.createInput('adaptive')
-                input.tool = self.bore2Tool
-                input.displayName = 'Adaptive1'
+                input.tool = self.boreTool
+                input.displayName = 'Pocket'
 
                 input.parameters.itemByName('tool_coolant').expression = "'disabled'"
                 input.parameters.itemByName('tool_spindleSpeed').expression = "15278.9 rpm"
@@ -350,7 +350,41 @@ class SetupMaker:
 
                 # add the operation to the setup
                 AdaptiveOp = setup.operations.add(input)
-                cam.generateToolpath(AdaptiveOp)
+                # cam.generateToolpath(AdaptiveOp)
+
+                #################### scallop operation ####################
+                input = setup.operations.createInput('scallop')
+                input.tool = self.bore2Tool
+                input.displayName = 'Scallop'
+
+                input.parameters.itemByName('tool_coolant').expression = "'disabled'"
+                input.parameters.itemByName('tool_spindleSpeed').expression = "16000 rpm"
+                input.parameters.itemByName('tool_surfaceSpeed').expression = "1047.2 ft/min"
+                input.parameters.itemByName('tool_feedCutting').expression = "250 in/min"
+
+                input.parameters.itemByName('clearanceHeight_offset').expression = "0.4 in"
+                input.parameters.itemByName('retractHeight_offset').expression = "0.2 in"
+
+                #input.parameters.itemByName('stockContours').expression = "true"
+                input.parameters.itemByName('tolerance').expression = "0.005 in"
+
+
+                input.parameters.itemByName('useRestMachining').expression = "false"
+                input.parameters.itemByName('useStockToLeave').expression = "false"
+                # input.parameters.itemByName('minimumStepdown').expression = "0.01 in"
+                # input.parameters.itemByName('optimalLoad').expression = "0.2 in"
+                # input.parameters.itemByName('rampType').expression = "'plunge'"
+
+                # add the operation to the setup
+                ScallopOp = setup.operations.add(input)
+
+                operations = adsk.core.ObjectCollection.create()
+                operations.add(AdaptiveOp)
+                operations.add(ScallopOp)
+
+                # generate the valid operations
+                cam.generateToolpath(operations)
+
             
         except:
             pass

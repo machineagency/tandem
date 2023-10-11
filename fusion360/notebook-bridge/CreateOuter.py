@@ -162,7 +162,7 @@ def holeDrill(holeDrillingFace):
         design = adsk.fusion.Design.cast(app.activeProduct)
         dowelDiam = design.userParameters.itemByName('dowelDiam')
         zDistance = design.userParameters.itemByName('artifactHeight')
-        body = recursivelyFindbRepBodies(activeSelection.rootComponent, "artifact")
+        body = recursivelyFindbRepBodies(activeSelection.rootComponent, 'artifact')
         minP = body.boundingBox.minPoint
         maxP = body.boundingBox.maxPoint
         minP.set(minP.x - tabLength, minP.y - tabLength, minP.z)
