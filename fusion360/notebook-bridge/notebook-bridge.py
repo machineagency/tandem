@@ -156,7 +156,7 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                                 elif setup == "mainHoles":
                                     cam.create_foam_bore(maybeHoleFaces)
                                 elif setup == "topDown":
-                                    cam.create_top_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['topface']))
+                                    cam.create_top_cut()
                                 elif setup == "bottomUp":
                                     cam.create_bottom_cut(getLoopWithEdgesOnFace(self.content['innerLoopEdgeCount'], self.content['bottomface']))
 

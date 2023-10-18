@@ -1,8 +1,7 @@
 # adsk_helpers.py
 
 import adsk.core, adsk.fusion, adsk.cam, traceback
-
-
+from typing import Union
 
 
 class SetupMaker:
@@ -64,7 +63,6 @@ class SetupMaker:
             # exit when the 2 tools are found
             if self.boreTool and self.faceTool and self.bore2Tool:
                 break
-
     
     def create_alignmentJig(self, holeFaces = None):
         
@@ -271,7 +269,7 @@ class SetupMaker:
         except:
             pass
     
-    def create_top_cut(self, innerTopEdges):
+    def create_top_cut(self):
         try:
             cam: adsk.cam.CAM = adsk.cam.CAM.cast(self.products.itemByProductType("CAMProductType"))
             setups = cam.setups
@@ -280,6 +278,7 @@ class SetupMaker:
             mainWorkpiece_y = self.design.userParameters.itemByName("mainWorkpiece_y").expression
             mainWorkpiece_z = self.design.userParameters.itemByName("mainWorkpiece_z").expression
             artifactHeight = self.design.userParameters.itemByName("artifactHeight").expression
+
             if setup == None:
                 setupInput = setups.createInput(
                     adsk.cam.OperationTypes.MillingOperation)
@@ -299,8 +298,6 @@ class SetupMaker:
                 
                 setup = setups.add(setupInput)
                 param = setup.parameters
-
-        
         
                 # set offset mode
                 param.itemByName('job_stockMode').expression = "'default'"
@@ -309,7 +306,7 @@ class SetupMaker:
 
 
                 #################### pocket operation ####################
-                input = setup.operations.createInput('pocket')
+                input = setup.operations.createInput('pocket_clearing')
                 input.tool = self.boreTool
                 input.displayName = 'Pocket'
 
@@ -326,14 +323,15 @@ class SetupMaker:
                 input.parameters.itemByName('optimalLoad').expression = "0.2 in"
                 input.parameters.itemByName('rampType').expression = "'plunge'"
 
-                if innerTopEdges is not None:
+                # if innerTopEdges is not None:
+                if True:
                     cadcontours2dParam: adsk.cam.CadContours2dParameterValue = input.parameters.itemByName('stockContours').value
                     # Get the CurveSelections object from the CAD contour. This
                     # object manages the list of contour selections.
                     curveSelections = cadcontours2dParam.getCurveSelections()
 
                     # Get the edges from the loop and add them to a list.
-                    outerEdges = [e for e in innerTopEdges]
+                    # outerEdges = [e for e in innerTopEdges]
 
                     # Create a new chain selection.
                     chainSel: adsk.cam.ChainSelection = curveSelections.createNewChainSelection()
@@ -343,14 +341,14 @@ class SetupMaker:
                     chainSel.isReverted = False
 
                     # Add the geometry to the chain.
-                    chainSel.inputGeometry = outerEdges
+                    chainSel.inputGeometry = []
 
                     # Apply the curve selection back to the parameter.
                     cadcontours2dParam.applyCurveSelections(curveSelections)
 
                 # add the operation to the setup
-                AdaptiveOp = setup.operations.add(input)
-                # cam.generateToolpath(AdaptiveOp)
+                pocketOp = setup.operations.add(input)
+                # cam.generateToolpath(pocketOp)
 
                 #################### scallop operation ####################
                 input = setup.operations.createInput('scallop')
