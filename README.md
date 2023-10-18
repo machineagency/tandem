@@ -35,6 +35,7 @@ To browse the notebook *without acutally using its functionality*, simply naviga
 1. Install Autodesk Fusion 360 on your system.
 2. Go to "Manage Tools" and install the `fusion360/toolLibrary/shopbotCamTool.json` file.
 3. In "Scripts and Add-Ins," run `fusion360/notebook-bridge/`. **Important:** make sure the backend server is running when you run the notebook bridge, otherwise Fusion360 will stall as it polls a non-existent server.
+4. Alternatively, In "Scripts and Add-Ins", select edit, and in the VS Code window popup, select the run with debugger option.
 
 ### Physical CNC Mill
 

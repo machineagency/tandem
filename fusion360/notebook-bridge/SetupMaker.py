@@ -309,7 +309,7 @@ class SetupMaker:
 
 
                 #################### pocket operation ####################
-                input = setup.operations.createInput('adaptive')
+                input = setup.operations.createInput('pocket')
                 input.tool = self.boreTool
                 input.displayName = 'Pocket'
 

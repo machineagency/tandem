@@ -117,6 +117,9 @@ class ThreadEventHandler(adsk.core.CustomEventHandler):
                 new_create_outer = response_json.get('create_outer')
 
                 if(new_status != 'standby'):
+                    if 'test_connection' in response_json:
+                        ui.messageBox('Notebook Bridge Connected and Running')
+
                     if self.content.get('create_outer') != new_create_outer:
                         self.content['create_outer'] = new_create_outer
                         if new_create_outer and (not recursivelyFindBody("outer")):

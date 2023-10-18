@@ -435,6 +435,11 @@ app.get('/mill/state', (req, res) => {
     }
 });
 
+// testing the backend server
+app.get('/connection/test', (req, res) => {
+    res.status(200).send('Server connected and running');
+});
+
 app.post('/mill/instructions', (req, res) => {
     let insts = req.body.instructions;
     if (!insts) {
