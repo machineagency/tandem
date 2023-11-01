@@ -28,7 +28,6 @@ To browse the notebook *without acutally using its functionality*, simply naviga
 1. Navigate to `overlay/` and run `npm install`.
 2. Run `npm run dev` and the AR overlay web page should be running on `localhost:5174` or similar.
 3. Navigate to `localhost:5174` in the browser to open the web page. This webpage should be directed to a projector over the CNC mill.
-4. To calibrate the projection for your physical setup, see the steps in the notebook. In `overlay/src/overlay-root.ts`, change the `groundTruth` variable to be the height (Y) and width (X) in inches of a reference rectangle on the CNC mill whose lower left corner is located (`offsetX`, `offsetY`) away from the lower-left corner of the projections. Apologies for the non-SI units; the machine we worked with uses primarily inches.
 
 ### Notebook Bridge
 
@@ -48,6 +47,14 @@ Then, change the line of code in `server.ts`
 ```const url = "YOUR SERVER URL HERE";```
 
 to be the URL of the Shopbot server running in the cloud.
+
+### Projector Setup
+
+1. Turn on your projector with the remote
+2. Connect the projector to your device using an HDMI cable
+3. Move the localhost overlay browser window to the projector (ensure that your computer settings treat the projector as a second screen)
+4. In your browser's settings, change the browser to be full screen
+5. Navigate to the notebook to calibrate the projector and test your connection
 
 ### Communicating with a Clank CNC Mill Running a Duet2 (PCB Demo)
 

@@ -1,6 +1,6 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, FlipStock, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction } from './type-utils'
+import { IR, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction, CalibrationBox } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
 
 
@@ -11,22 +11,13 @@ export class OverlayRoot {
   baseUrl = 'http://localhost:3000';
   currMode: StepStatus = 'standby';
 
-  // TODO: a section view
-
-  // inches
-  // groundTruth = {
-  //   height: 30.5,
-  //   width: 51.875,
-  //   offsetX: 0,
-  //   offsetY: 0
-  // };
-
+  /*
   groundTruth = {
     height: 16.25,
     width: 17,
     offsetX: 0.75,
     offsetY: 0.25
-  };
+  };*/
 
   scaleFactor = 20;
 
@@ -58,7 +49,7 @@ export class OverlayRoot {
     }
     else if (step.type === 'calibration') {
       this.ps.project.activeLayer.removeChildren();
-      this.generateCalibrationBox();
+      this.generateCalibrationBox(step.marks[0] as CalibrationBox);
     }
     else if (step.type === 'standby') {
       // noop
@@ -134,8 +125,6 @@ export class OverlayRoot {
         return this.generateSvg(mark as SVG);
       case 'screwPosition':
         return this.generateScrewPosition(mark as ScrewPosition);
-      case 'calibrationBox':
-        return this.generateCalibrationBox();
       case 'toolpath':
         return this.generateToolpathVisualization(mark as Toolpath);
       case 'sectionAnnotation':
@@ -483,12 +472,12 @@ export class OverlayRoot {
   }
 
   // Calculates homography for the projection 
-  generateCalibrationBox(): paper.Group {
+  generateCalibrationBox(cb: CalibrationBox): paper.Group {
     let box = new this.ps.Path.Rectangle({
       point: [
-        this.scaleFactor * this.groundTruth.offsetX,
-        this.scaleFactor * this.groundTruth.offsetY],
-      size: [this.groundTruth.width * this.scaleFactor, this.groundTruth.height * this.scaleFactor],
+        this.scaleFactor * cb.location.x,
+        this.scaleFactor * cb.location.y],
+      size: [cb.width * this.scaleFactor, cb.height * this.scaleFactor],
       strokeColor: 'white',
       selected: true
     });
