@@ -93,7 +93,9 @@ export interface SVG extends Mark {
 };
   
 export interface CalibrationBox extends Mark {
-    //type: "calibrationBox";
+    height: number,
+    width: number
+    type: 'calibrationBox'
 };
 
 export interface ScrewPosition extends Mark {

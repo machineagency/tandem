@@ -1,7 +1,8 @@
 import * as paper from 'paper'
 import { Homography } from './homography'
-import { IR, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction, CalibrationBox } from './type-utils'
+import { IR, StepStatus, Step, Mark, ScrewPosition, BoxOutline, Arrow, Crosshair, Circle, Text, Box, SVG, Toolpath, SectionAnnotation, Instruction, CalibrationBox, FlipStock } from './type-utils'
 import { lowerEBB, lowerGCode, lowerSBP } from './ir'
+import { ParameterPropertyDeclaration } from 'typescript';
 
 
 // @customElement('overlay-root')
@@ -113,10 +114,8 @@ export class OverlayRoot {
         return this.generateBox(mark as Box);
       case 'boxOutline':
         return this.generateBoxOutline(mark as BoxOutline);
-      /*
       case 'flipStock':
-        return this.vizFlipStock(mark as FlipStock);
-      */
+        return this.generateFlipStock(mark as FlipStock);
       case 'circle':
         return this.generateCircle(mark as Circle);
       case 'text':
@@ -709,6 +708,94 @@ export class OverlayRoot {
     return new this.ps.Group({
       name: 'boxOutline',
       children: [box]
+    });
+  }
+
+  generateFlipStock(mark: FlipStock): paper.Group {
+    // Create line segments
+    const bottomSegment = new paper.Path.Line(
+      new paper.Point(this.scaleFactor * mark.location.x, this.scaleFactor * mark.location.y),
+      new paper.Point(this.scaleFactor * (mark.location.x + mark.width), this.scaleFactor * mark.location.y)
+    );
+
+    const rightSegment = new paper.Path.Line(
+      new paper.Point(bottomSegment.segments[1].point.x, bottomSegment.segments[1].point.y),
+      new paper.Point(bottomSegment.segments[1].point.x, this.scaleFactor * (mark.location.y + mark.height))
+    );
+
+    const topSegment = new paper.Path.Line(
+      new paper.Point(rightSegment.segments[1].point.x, rightSegment.segments[1].point.y),
+      new paper.Point(this.scaleFactor * mark.location.x, this.scaleFactor * (mark.location.y + mark.height))
+    );
+
+    const leftSegment = new paper.Path.Line(
+      new paper.Point(topSegment.segments[1].point.x, topSegment.segments[1].point.y),
+      new paper.Point(bottomSegment.segments[0].point.x, bottomSegment.segments[0].point.y)
+    );
+
+    bottomSegment.strokeColor = new paper.Color('red');
+    rightSegment.strokeColor = new paper.Color('white');
+    topSegment.strokeColor = new paper.Color('blue');
+    leftSegment.strokeColor = new paper.Color('white');
+
+    let offset = 10; 
+
+    const bottomSegment2 = new paper.Path.Line(
+      new paper.Point(this.scaleFactor * mark.location.x, this.scaleFactor * (mark.location.y + offset)),
+      new paper.Point(this.scaleFactor * (mark.location.x + mark.width), this.scaleFactor * (mark.location.y + offset))
+    );
+
+    const rightSegment2 = new paper.Path.Line(
+      new paper.Point(bottomSegment2.segments[1].point.x, bottomSegment2.segments[1].point.y),
+      new paper.Point(bottomSegment2.segments[1].point.x, this.scaleFactor * (mark.location.y + offset + mark.height))
+    );
+
+    const topSegment2 = new paper.Path.Line(
+      new paper.Point(rightSegment2.segments[1].point.x, rightSegment2.segments[1].point.y),
+      new paper.Point(this.scaleFactor * mark.location.x, this.scaleFactor * (mark.location.y + offset + mark.height))
+    );
+
+    const leftSegment2 = new paper.Path.Line(
+      new paper.Point(topSegment2.segments[1].point.x, topSegment2.segments[1].point.y),
+      new paper.Point(bottomSegment2.segments[0].point.x, bottomSegment2.segments[0].point.y)
+    );
+
+    // Set stroke colors for the second box
+    bottomSegment2.strokeColor = new paper.Color('blue');
+    rightSegment2.strokeColor = new paper.Color('white');
+    topSegment2.strokeColor = new paper.Color('red');
+    leftSegment2.strokeColor = new paper.Color('white');
+
+    // Create a dashed line between the two boxes
+    const dashedLine = new paper.Path();
+    dashedLine.strokeColor = new paper.Color('pink');
+    dashedLine.strokeWidth = 2;
+    dashedLine.dashArray = [4, 4];
+
+    // Adjust the points to create a horizontal dashed line
+    const p1 = new paper.Point(this.scaleFactor *( mark.location.x + mark.width + 1), this.scaleFactor * (mark.location.y + mark.location.y + offset + mark.height) / 2);
+    const p2 = new paper.Point(this.scaleFactor * (mark.location.x - 1), this.scaleFactor * (mark.location.y + mark.location.y + offset + mark.height) / 2);
+
+    dashedLine.add(p1, p2);
+
+    // add text label
+    let text = new this.ps.PointText({
+      point: [
+        this.scaleFactor * (mark.location.x - 2),
+        this.scaleFactor * ((mark.location.y + mark.height) + (offset / 3))
+      ],
+      content: 'flip stock forward over dashed line',
+      fillColor: 'green',
+      fontFamily: 'Courier New',
+      fontWeight: 'bold',
+      fontSize: 10
+    });
+    text.scale(1, -1);
+
+    return new this.ps.Group({
+      name: 'flipStock',
+      children: [bottomSegment, rightSegment, leftSegment, topSegment, 
+        bottomSegment2, rightSegment2, topSegment2, leftSegment2, dashedLine, text]
     });
   }
 
