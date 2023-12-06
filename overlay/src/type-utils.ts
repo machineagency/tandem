@@ -24,6 +24,7 @@ export interface Toolpath extends Mark {
 
 export interface IR {
     op: Operation;
+    opCode: string;
     args: {
         x: number | null;
         y: number | null;

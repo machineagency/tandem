@@ -617,11 +617,6 @@ export class OverlayRoot {
     });
   }
 
-  /*
-  vizFlipStock(mark: FlipStock): paper.Group {
-    let ll = new this.ps.Point(mark.location.x, mark.location.y);
-    let lr = new this.ps.Point()
-  }*/
 
   generateText(mark: Text): paper.Group {
     let text = new this.ps.PointText({
@@ -732,14 +727,15 @@ export class OverlayRoot {
       new paper.Point(topSegment.segments[1].point.x, topSegment.segments[1].point.y),
       new paper.Point(bottomSegment.segments[0].point.x, bottomSegment.segments[0].point.y)
     );
-
-    bottomSegment.strokeColor = new paper.Color('red');
+    
+    bottomSegment.strokeColor = new paper.Color('white');
     rightSegment.strokeColor = new paper.Color('white');
-    topSegment.strokeColor = new paper.Color('blue');
+    topSegment.strokeColor = new paper.Color('white');
     leftSegment.strokeColor = new paper.Color('white');
 
     let offset = 10; 
-
+    
+    /*
     const bottomSegment2 = new paper.Path.Line(
       new paper.Point(this.scaleFactor * mark.location.x, this.scaleFactor * (mark.location.y + offset)),
       new paper.Point(this.scaleFactor * (mark.location.x + mark.width), this.scaleFactor * (mark.location.y + offset))
@@ -766,15 +762,22 @@ export class OverlayRoot {
     topSegment2.strokeColor = new paper.Color('red');
     leftSegment2.strokeColor = new paper.Color('white');
 
+  */
+
     // Create a dashed line between the two boxes
     const dashedLine = new paper.Path();
     dashedLine.strokeColor = new paper.Color('pink');
     dashedLine.strokeWidth = 2;
     dashedLine.dashArray = [4, 4];
 
+    /*
     // Adjust the points to create a horizontal dashed line
     const p1 = new paper.Point(this.scaleFactor *( mark.location.x + mark.width + 1), this.scaleFactor * (mark.location.y + mark.location.y + offset + mark.height) / 2);
     const p2 = new paper.Point(this.scaleFactor * (mark.location.x - 1), this.scaleFactor * (mark.location.y + mark.location.y + offset + mark.height) / 2);
+    */
+     
+    const p1 = new paper.Point(this.scaleFactor *( mark.location.x + mark.width + 1), this.scaleFactor * (mark.location.y + mark.height * 0.5));
+    const p2 = new paper.Point(this.scaleFactor * (mark.location.x - 1), this.scaleFactor * (mark.location.y + mark.height * 0.5));
 
     dashedLine.add(p1, p2);
 
@@ -782,9 +785,9 @@ export class OverlayRoot {
     let text = new this.ps.PointText({
       point: [
         this.scaleFactor * (mark.location.x - 2),
-        this.scaleFactor * ((mark.location.y + mark.height) + (offset / 3))
+        this.scaleFactor * ((mark.location.y + mark.height + 1))
       ],
-      content: 'flip stock forward over dashed line',
+      content: 'flip stock across dashed axis',
       fillColor: 'green',
       fontFamily: 'Courier New',
       fontWeight: 'bold',
@@ -794,8 +797,7 @@ export class OverlayRoot {
 
     return new this.ps.Group({
       name: 'flipStock',
-      children: [bottomSegment, rightSegment, leftSegment, topSegment, 
-        bottomSegment2, rightSegment2, topSegment2, leftSegment2, dashedLine, text]
+      children: [bottomSegment, rightSegment, leftSegment, topSegment, dashedLine, text]
     });
   }
 
